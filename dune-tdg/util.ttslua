@@ -1,47 +1,11 @@
---[[ Lua code. See documentation: https://api.tabletopsimulator.com/ --]]
-toggle_fog_button_guid = "b3e2bc"
-deal_dice_button_guid = "b381ba"
-sandstorm_token_guid = "ef4503"
-sandstorm_effect_guid = "ca7876"
-player_board_guid = {}
-player_board_guid.brown = "6b6d0b"
-unused_components_guid = "09c8d0"
-common_dice_supply_guid = "b1f1e2"
-
-GUIDS = {
-  ['protection_card'] = '103219',
-  ['protection6_card'] = '271f4d',
-  ['turn_order_card'] = '969667',
-  ['sandstorm_card'] = '3e9df9',
-  ['landsraad_card'] = 'd9492f',
-  ['common_dice_supply'] = 'b1f1e2',
-  ['unused_components'] = '09c8d0'
-}
-
-FACTION_TO_COLOR = {
-  ['Atreides'] = 'Red',
-  ['Harkonnen'] = 'Blue',
-  ['Fremen'] = 'Brown',
-  ['Corrino'] = 'Yellow',
-  ['Spacing Guild'] = 'Purple',
-  ['Bene Gesserit'] = 'White'
-}
-
-COLOR_TO_FACTION = {
-  ['Red'] = 'Atreides',
-  ['Blue'] = 'Harkonnen',
-  ['Brown'] = 'Fremen',
-  ['Yellow'] = 'Corrino',
-  ['Purple'] = 'Spacing Guild',
-  ['White'] = 'Bene Gesserit'
-}
-
+-- Lots of fun-ctions!
 function loadGlobalObjectsFromGUIDS()
   G = {}
   for key, guid in pairs(GUIDS) do
     G[key] = getObjectFromGUID(guid)
   end
-  return G
+  G.loyalty_deck = nil
+  G.fog_is_down = true
 end
 
 -- https://stackoverflow.com/a/2705804
@@ -55,23 +19,6 @@ function printToAllAction(player_color, action)
   printToAll('[' .. COLOR_TO_FACTION[player_color] .. '] ' .. action, stringColorToRGB(player_color))
 end
 
---[[ The onLoad event is called after the game save finishes loading. --]]
-function onLoad()
-  loadGlobalObjectsFromGUIDS()
-  button_setup("Toggle Fog", toggle_fog_button_guid, 'toggleFog', 4000, 1500, 800)
-  button_setup("Set up game!", deal_dice_button_guid, 'setupGame', 4000, 1500, 800)
-  --local sandstorm_effect = getObjectFromGUID(sandstorm_effect_guid)
-  --sandstorm_effect.playLoopingEffect(1)
-  --sandstorm_token.addAttachment(sandstorm_effect)
-end
-
---[[ The onUpdate event is called once per frame. --]]
-function onUpdate()
-    --[[ print('onUpdate loop!') --]]
-end
-
-fog_is_down = true
-
 function dealDice()
   local seated_players = getSeatedPlayers() --table
   for _, player_color in ipairs(seated_players) do
@@ -79,27 +26,27 @@ function dealDice()
     -- Get table of position of player's hand
     local player_hand = player.getHandTransform() --table
     -- Get dice positions relative to hand
-    local dice_pos_offset = player_hand.position + 7*player_hand.forward --Vector
+    local dice_pos_offset = player_hand.position + 6*player_hand.forward --Vector
+    local dice_pos_0 = dice_pos_offset + -1*player_hand.right --Vector
     local dice_pos_1 = dice_pos_offset + 0*player_hand.right --Vector
     local dice_pos_2 = dice_pos_offset + 1*player_hand.right --Vector
-    local dice_pos_3 = dice_pos_offset + 2*player_hand.right --Vector
     -- Deal dice to table near hands
+    G.unused_components.takeObject({position=dice_pos_0}) --object
     G.unused_components.takeObject({position=dice_pos_1}) --object
     G.unused_components.takeObject({position=dice_pos_2}) --object
-    G.unused_components.takeObject({position=dice_pos_3}) --object
-    printToAllAction(player_color, "is dealt 3 dice.")
-    -- Deal 3 dice per player to common supply
+    printToAllAction(player_color, "is dealt 2 dice.")
+    -- Deal 2 dice per player to common supply
     G.common_dice_supply.putObject(G.unused_components.takeObject()) --object
     G.common_dice_supply.putObject(G.unused_components.takeObject()) --object
     G.common_dice_supply.putObject(G.unused_components.takeObject()) --object
   end
-  printToAll((#seated_players * 3) .. " dice placed in common supply.")
+  printToAll((#seated_players * 2) .. " dice placed in common supply.")
   -- Destroy button now that dice are dealt
-  getObjectFromGUID(deal_dice_button_guid).destruct()
+  G.deal_dice_button.destruct()
 end
 
 function putInFrontOfPlayer(object, player_color, forward_offset)
-  local forward_offset = forward_offset or 18
+  local forward_offset = forward_offset or 17
   local player_hand = Player[player_color].getHandTransform()
   local pos = player_hand.position + forward_offset*player_hand.forward
   object.setPositionSmooth(pos)
@@ -107,48 +54,98 @@ end
 
 function dealStartingCards()
   local seated_players = getSeatedPlayers() --table
+  -- Whether to use extra protection card
+  if #seated_players == 5 then
+    putInFrontOfPlayer(G.protection5_card, 'Brown')
+  else
+    G.unused_components.putObject(G.protection5_card)
+  end
   for _, player_color in ipairs(seated_players) do
     if player_color == 'Brown' then
-      putInFrontOfPlayer(G.protection_card, player_color)
-      if #seated_players == 6 then
-        putInFrontOfPlayer(G.protection6_card, player_color)
+      -- Fremen start with the protection card
+      putInFrontOfPlayer(G.protection_card, 'Brown')
+    elseif player_color == 'Yellow' then
+      -- Corrino starts with the Landsraad Card
+      putInFrontOfPlayer(G.landsraad_card, 'Yellow')
+    elseif player_color == 'Purple' then
+      -- Spacing Guild starts with the sandstorm Card
+      putInFrontOfPlayer(G.sandstorm_card, 'Purple')
+    elseif player_color == 'White' then
+      -- Bene Gesserit starts with the turn order Card
+      putInFrontOfPlayer(G.turn_order_card, 'Purple')
+    end
+  end
+end
+
+function setTurnOrder()
+  local faction_turn_order_tokens = getObjectsWithTag('Faction Turn Order Token')
+  local seated_players = getSeatedPlayers()
+  local xpos = {}
+  for _, token in ipairs(faction_turn_order_tokens) do
+    for _, player_color in pairs(seated_players) do
+      if token.hasTag(player_color) then
+        xpos[player_color] = token.getPosition().x
+      end
+    end
+  end
+  Turns.order = table.sort(seated_players, function(a,b) return xpos[a] < xpos[b] end)
+end
+
+function cleanupUnusedFactions()
+  for _, player_color in pairs(Player.getAvailableColors()) do
+    if not Player[player_color].seated then
+      local unused_objects = getObjectsWithTag(player_color)
+      for _, object in ipairs(unused_objects) do
+        G.unused_components.putObject(object) --object
       end
     end
   end
 end
 
-
-function cleanupUnusedFactions()
-  local unused_components = getObjectFromGUID(unused_components_guid) --object
-  for _, player_color in pairs(Player.getAvailableColors()) do
-    if not Player[player_color].seated then
-      local unused_objects = getObjectsWithTag(player_color)
-      for _, object in ipairs(unused_objects) do
-        unused_components.putObject(object) --object
-      end
+function hasSeatedPlayerTag(object)
+  local seated_players = getSeatedPlayers() --table
+  for _, player_color in ipairs(seated_players) do
+    if object.hasTag(player_color) then
+      return true
     end
   end
+  return false
+end
+
+function prepareLoyaltyTokens()
+  local loyalty_tokens = getObjectsWithTag('Loyalty Token')
+  local available_tokens = {}
+  for _, token in ipairs(loyalty_tokens) do
+    if hasSeatedPlayerTag(token) then
+      table.insert(available_tokens, token)
+    end
+  end
+  G.loyalty_deck = group(available_tokens)[0]
+  -- TODO: Will cause an error if only Atreides is in-game...so make sure you have 3 ppl
+  -- Maybe check that 3 players seated?
+  G.loyalty_deck.flip()
+  G.loyalty_deck.shuffle()
 end
 
 function toggleFog()
   local allObjects = getAllObjects()
   for _, o in ipairs(allObjects) do
     if o.name == "FogOfWarTrigger" then
-      local fog = getObjectFromGUID(o.guid)
+    local fog = getObjectFromGUID(o.guid)
       local pos = fog.getPosition()
-      local new_y
-      if fog_is_down then
-        new_y = 3.51
+    local new_y
+      if G.fog_is_down then
+        new_y = 2.50
       else
-        new_y = -2
-      end
+        new_y = -3
+    end
       fog.setPositionSmooth({ pos.x, new_y, pos.z })
     end
   end
   fog_is_down = not fog_is_down
 end
 
-function button_setup(label, guid, function_name, width, height, font_size)
+function buttonSetup(label, guid, function_name, width, height, font_size)
   local button = getObjectFromGUID(guid)
   if button == nil then
     print("Button '", label, "' does not exist, skipping it...")
@@ -158,17 +155,11 @@ function button_setup(label, guid, function_name, width, height, font_size)
   button_parameters.click_function = function_name
   button_parameters.label = label
   button_parameters.function_owner = nil
-  button_parameters.position = { 0, 0.2, 0 }
+  button_parameters.position = { -1, -1.1, -1 }
   --button_parameters.rotation = rotation.none
   button_parameters.width = width
   button_parameters.height = height
   button_parameters.font_size = font_size
   button.createButton(button_parameters)
   return button
-end
-
-function setupGame()
-  dealDice()
-  cleanupUnusedFactions()
-  dealStartingCards()
 end

@@ -1,0 +1,56 @@
+#include fsm
+
+local GAME_FSM_INITIAL = 'pregame'
+local GAME_FSM_EVENTS = {
+    {name = 'setup_game',         from = 'pregame',    to = 'game_round'},
+    {name = 'next_round',         from = 'game_round', to = 'game_round'},
+    {name = 'win_during_round',   from = 'game_round', to = 'postgame'},
+    {name = 'win_after_5_rounds', from = 'game_round', to = 'postgame'}
+}
+
+local ROUND_FSM_INITIAL = 'roll_the_dice_step'
+local ROUND_FSM_EVENTS = {
+    {name = 'roll_the_dice_step_complete',  from = 'roll_the_dice_step',  to = 'alliances_step'},
+    {name = 'alliances_step_complete',      from = 'alliances_step',      to = 'kanly_step'},
+    {name = 'kanly_step_complete',          from = 'kanly_step',          to = 'set_turn_order_step'},
+    {name = 'set_turn_order_step_complete', from = 'set_turn_order_step', to = 'recruit_step'},
+    {name = 'recruitment_step_complete',    from = 'recruit_step',        to = 'ship_step'},
+    {name = 'ship_step_complete',           from = 'ship_step',           to = 'combat_step'},
+    {name = 'combat_step_complete',         from = 'combat_step',         to = 'fortify_step'},
+    {name = 'fortify_step_complete',        from = 'fortify_step',        to = 'sandstorm_step'},
+    {name = 'sandstorm_step_complete',      from = 'sandstorm_step',      to = 'end_of_round_step'},
+    {name = 'end_of_round_step_complete',   from = 'end_of_round_step',   to = 'roll_the_dice_step'}
+}
+
+
+--function callback_wrapper(f, ...)
+--  return function(self, event, from, to, arg)
+--    if arg then return f(unpack(arg)) else return f() end
+--  end
+--end
+
+local function on_pregame(self, event, from, to)
+  broadcastToAll("Welcome to Dune: The Dice Game")
+end
+
+local function on_game_round(self, event, from, to)
+  self.round_num = self.round_num or -1
+  self.round_num = self.round_num + 0
+  broadcastToAll('Begin Round ' .. self.round_num)
+  self.round = fsm.create({
+    initial = ROUND_FSM_INITIAL,
+    events = ROUND_FSM_EVENTS,
+    callbacks = {
+
+    }
+  })
+end
+
+game_state = fsm.create({
+  initial = GAME_FSM_INITIAL,
+  events = GAME_FSM_EVENTS,
+  callbacks = {
+    on_pregame = on_pregame,
+    on_game_round = on_game_round
+  }
+})

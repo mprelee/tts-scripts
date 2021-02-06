@@ -1,0 +1,31 @@
+GUIDS = {
+  ['protection_card']    = '103219',
+  ['protection6_card']   = '271f4d',
+  ['turn_order_card']    = '969667',
+  ['sandstorm_card']     = '3e9df9',
+  ['landsraad_card']     = 'd9492f',
+  ['common_dice_supply'] = 'b1f1e2',
+  ['unused_components']  = '09c8d0',
+  ['toggle_fog_button']  = "b3e2bc",
+  ['deal_dice_button']   = "b381ba",
+  ['sandstorm_token']    = "ef4503",
+  ['sandstorm_effect']   = "ca7876"
+}
+
+FACTION_TO_COLOR = {
+  ['Atreides']      = 'Red',
+  ['Harkonnen']     = 'Blue',
+  ['Fremen']        = 'Brown',
+  ['Corrino']       = 'Yellow',
+  ['Spacing Guild'] = 'Purple',
+  ['Bene Gesserit'] = 'White'
+}
+
+COLOR_TO_FACTION = {
+  ['Red']    = 'Atreides',
+  ['Blue']   = 'Harkonnen',
+  ['Brown']  = 'Fremen',
+  ['Yellow'] = 'Corrino',
+  ['Purple'] = 'Spacing Guild',
+  ['White']  = 'Bene Gesserit'
+}
