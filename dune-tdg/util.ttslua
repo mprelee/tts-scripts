@@ -14,6 +14,10 @@ local GUIDS = {
   ['round_marker']        = 'c1b8e3'
 }
 
+LAYOUT_ZONE_GUIDS = {
+  ['Brown'] = '956983'
+}
+
 local READY_BUTTON_GUIDS = {
   ['Red']    = '64453f',
   ['Blue']   = '43c2eb',
@@ -43,6 +47,14 @@ local COLOR_TO_FACTION = {
 
 -- do nothing function
 function pass() return end
+
+-- https://stackoverflow.com/a/33511182
+function tableHasValue(tab, val)
+  for index, value in ipairs(tab) do
+    if value == val then return true end
+  end
+  return false
+end
 
 -- https://stackoverflow.com/a/2705804
 function tableLength(T)
@@ -94,38 +106,64 @@ function putInFrontOfPlayer(object, player_color, forward_offset)
   local forward_offset = forward_offset or 17
   local player_hand = Player[player_color].getHandTransform()
   local pos = player_hand.position + forward_offset*player_hand.forward
+  object.setRotationSmooth(player_hand.rotation-object.getRotation())
   object.setPositionSmooth(pos)
 end
 
 function dealStartingCards()
   local unused_components = getObjectFromGUID(GUIDS.unused_components)
-  local seated_players = getSeatedPlayers() --table
-  local protection_card = getObjectFromGUID(GUIDS.protection_card)
-  local protection6_card = getObjectFromGUID(GUIDS.protection6_card)
-  local sandstorm_card = getObjectFromGUID(GUIDS.sandstorm_card)
-  local landsraad_card = getObjectFromGUID(GUIDS.landsraad_card)
-  local turn_order_card = getObjectFromGUID(GUIDS.turn_order_card)
-  -- Whether to use extra protection card
-  if #seated_players >= 5 then
+  local seated_players    = getSeatedPlayers() --table
+  local protection_card   = getObjectFromGUID(GUIDS.protection_card)
+  local protection6_card  = getObjectFromGUID(GUIDS.protection6_card)
+  local sandstorm_card    = getObjectFromGUID(GUIDS.sandstorm_card)
+  local landsraad_card    = getObjectFromGUID(GUIDS.landsraad_card)
+  local turn_order_card   = getObjectFromGUID(GUIDS.turn_order_card)
+  -- Fremen starts with the Protection Card(s)
+  -- Otherwise last player gets card(s)
+  if #seated_players == 6 then
     putInFrontOfPlayer(protection6_card, 'Brown')
+    putInFrontOfPlayer(protection_card, 'Brown')
   else
+    -- Don't use both protection cards with less than 6
     unused_components.putObject(protection6_card)
-  end
-  for _, player_color in ipairs(seated_players) do
-    if player_color == 'Brown' then
-      -- Fremen start with the protection card
+    -- Fremen starts with the Landsraad Card
+    -- Otherwise last player gets card
+    if tableHasValue(seated_players, 'Brown') then
       putInFrontOfPlayer(protection_card, 'Brown')
-    elseif player_color == 'Yellow' then
-      -- Corrino starts with the Landsraad Card
-      putInFrontOfPlayer(landsraad_card, 'Yellow')
-    elseif player_color == 'Purple' then
-      -- Spacing Guild starts with the sandstorm Card
-      putInFrontOfPlayer(sandstorm_card, 'Purple')
-    elseif player_color == 'White' then
-      -- Bene Gesserit starts with the turn order Card
-      putInFrontOfPlayer(turn_order_card, 'White')
+    else
+      putInFrontOfPlayer(protection_card, getLastPlayer())
     end
   end
+  -- protection_card.use_hands = false
+  -- Corrino starts with the Landsraad Card
+  -- Otherwise last player gets card
+  if tableHasValue(seated_players, 'Yellow') then
+    putInFrontOfPlayer(landsraad_card, 'Yellow')
+    --landsraad_card.deal(1, 'Yellow')
+  else
+    --landsraad_card.deal(1, getLastPlayer())
+    putInFrontOfPlayer(landsraad_card, getLastPlayer())
+  end
+  -- Spacing Guild starts with the sandstorm Card
+  -- Otherwise last player gets card
+  if tableHasValue(seated_players, 'Purple') then
+    putInFrontOfPlayer(sandstorm_card, 'Purple')
+  else
+    putInFrontOfPlayer(sandstorm_card, getLastPlayer())
+  end
+  -- Bene Gesserit starts with the turn order Card
+  -- Otherwise last player gets card
+  if tableHasValue(seated_players, 'White') then
+    putInFrontOfPlayer(turn_order_card, 'White')
+  else
+    putInFrontOfPlayer(turn_order_card, getLastPlayer())
+  end
+  -- Drop cards to table
+  --protection_card.use_hands = false
+  --protection6_card.use_hands = false
+  --landsraad_card.use_hands = false
+  --turn_order_card.use_hands = false
+  --sandstorm_card.use_hands = false
 end
 
 function setTurnOrder()
@@ -207,7 +245,12 @@ function getFirstPlayer()
 end
 
 function getLastPlayer()
-  return Turns.order[#Turns.order]
+  -- Turns.order undefined for one player...
+if #getSeatedPlayers() == 1 then
+    return getSeatedPlayers()[1]
+  else
+    return Turns.order[#Turns.order]
+  end
 end
 
 function isFirstPLayer(player_color)
