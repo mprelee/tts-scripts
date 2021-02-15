@@ -1,15 +1,16 @@
-#include util
-#include <lib/fsm>
+guids = require('dune-tdg/guids')
+util = require('dune-tdg/util')
+fsm = require('lib/fsm')
 
 --------------------------------------------------------------------------------
 -- Finite State Machines
 --------------------------------------------------------------------------------
 local GAME_FSM_INITIAL = 'pregame'
 local GAME_FSM_EVENTS = {
-    {name = 'setup_game', from = 'pregame',     to = 'setup_round'},
+    {name = 'next_round', from = 'pregame',     to = 'setup_round'},
     {name = 'next_round', from = 'setup_round', to = 'game_round'},
     {name = 'next_round', from = 'game_round',  to = 'game_round'},
-    {name = 'game_over',  from = 'game_round',  to = 'postgame'},
+    {name = 'game_over',  from = 'game_round',  to = 'postgame'} 
 }
 
 local ROUND_FSM_INITIAL = 'pregame'
@@ -24,7 +25,18 @@ local ROUND_FSM_EVENTS = {
     {name = 'next_step',  from = 'combat_step',         to = 'fortify_step'},
     {name = 'next_step',  from = 'fortify_step',        to = 'sandstorm_step'},
     {name = 'next_step',  from = 'sandstorm_step',      to = 'end_of_round_step'},
-    {name = 'next_step',  from = 'end_of_round_step',   to = 'roll_the_dice_step'}
+    {name = 'next_step',  from = 'end_of_round_step',   to = 'roll_the_dice_step'},
+    {name = 'prev_step',  to = 'roll_the_dice_step',  from = 'alliances_step'},
+    {name = 'prev_step',  to = 'alliances_step',      from = 'kanly_step'},
+    {name = 'prev_step',  to = 'kanly_step',          from = 'set_turn_order_step'},
+    {name = 'prev_step',  to = 'set_turn_order_step', from = 'recruit_step'},
+    {name = 'prev_step',  to = 'recruit_step',        from = 'ship_step'},
+    {name = 'prev_step',  to = 'ship_step',           from = 'combat_step'},
+    {name = 'prev_step',  to = 'combat_step',         from = 'fortify_step'},
+    {name = 'prev_step',  to = 'fortify_step',        from = 'sandstorm_step'},
+    {name = 'prev_step',  to = 'sandstorm_step',      from = 'end_of_round_step'},
+    {name = 'prev_step',  to = 'end_of_round_step',   from = 'roll_the_dice_step'}
+
 }
 
 --------------------------------------------------------------------------------
@@ -34,34 +46,33 @@ local function on_pregame(self, event, from, to)
   broadcastToAll("Welcome to Dune: The Dice Game", stringColorToRGB('Orange'))
 end
 
-local function on_setup_game(self, event, from, to)
-  dealDice()
-  cleanupUnusedFactions()
-  dealStartingCards()
-  prepareLoyaltyTokens()
-  setTurnOrder()
-end
-
 local function on_setup_round(self, event, from, to)
   broadcastToAll('Complete setup instructions on your faction board.', stringColorToRGB('Orange'))
 end
 
-local round_number = 0
+round_number = 0
 local function on_next_round(self, event, from, to)
-  if round_number < 6 then
-    round_number = round_number + 1
-    broadcastToAll('Begin Round ' .. round_number, stringColorToRGB('Orange'))
-    if round_number > 1 then
-      local round_marker = getObjectFromGUID(GUIDS.round_marker)
-      local current_pos = round_marker.getPosition()
-      round_marker.setPositionSmooth(current_pos + Vector(3.03,1,0))
+  if from == 'pregame' and to == 'setup_round' then
+    dealDice()
+    cleanupUnusedFactions()
+    dealStartingCards()
+    prepareLoyaltyTokens()
+    setTurnOrder()
+  else
+    if round_number < 6 then
+      round_number = round_number + 1
+      if round_number > 1 then
+        local round_marker = getObjectFromGUID(guids.round_marker)
+        local current_pos = round_marker.getPosition()
+        round_marker.setPositionSmooth(current_pos + Vector(3.03,1,0))
+      end
     end
   end
 end
 
 local function on_game_over()
   local owner_color = getClosestFactionMat(position)
-  local position = getObjectFromGUID(GUIDS.landsraad_card).getPosition()
+  local position = getObjectFromGUID(guids.landsraad_card).getPosition()
   broadcastToAll('The game is over.', stringColorToRGB('Orange'))
   broadcastToAllAction(owner_color, ' owns the Landsraad Card.')
   broadcastToAll('Check for game winner now.', stringColorToRGB('Orange'))
@@ -73,7 +84,7 @@ end
 
 local function on_roll_the_dice_step(self, event, from, to)
   -- Simultaneous
-  broadcastToAll('Step 1:  Roll and assign dice', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 1:  Roll and assign dice', stringColorToRGB('Orange'))
   if fog_is_down then
     toggleFog()
   end
@@ -81,7 +92,7 @@ end
 
 local function on_alliances_step(self, event, from, to)
   -- In Turn Order
-  broadcastToAll('Step 2:  Propose Alliances', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 2:  Propose Alliances', stringColorToRGB('Orange'))
   if not fog_is_down then
     toggleFog()
   end
@@ -89,13 +100,13 @@ end
 
 local function on_kanly_step(self, event, from, to)
   -- In Turn Order
-  broadcastToAll('Step 3:  Kanly', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 3:  Kanly', stringColorToRGB('Orange'))
 end
 
 local function on_set_turn_order_step(self, event, from, to)
   -- One player
-  broadcastToAll('Step 4:  Set Turn Order', stringColorToRGB('Orange'))
-  local position = getObjectFromGUID(GUIDS.turn_order_card).getPosition()
+  broadcastToAll('Round ' .. round_number .. ', Step 4:  Set Turn Order', stringColorToRGB('Orange'))
+  local position = getObjectFromGUID(guids.turn_order_card).getPosition()
   local owner_color = getClosestFactionMat(position)
   broadcastToAllAction(owner_color, ' sets the Turn Order')
   Player[owner_color].pingTable(position)
@@ -112,24 +123,24 @@ end
 
 local function on_recruit_step(self, event, from, to)
   -- Simultaneous if players agree
-  broadcastToAll('Step 5:  Recruit Troops to Faction Card', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 5:  Recruit Troops to Faction Card', stringColorToRGB('Orange'))
 end
 
 local function on_ship_step(self, event, from, to)
   -- In Turn Order
-  broadcastToAll('Step 6:  Ship Troops to Surface', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 6:  Ship Troops to Surface', stringColorToRGB('Orange'))
 end
 
 local function on_combat_step(self, event, from, to)
   -- In Turn Order
-  broadcastToAll('Step 7:  Combat', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 7:  Combat', stringColorToRGB('Orange'))
 end
 
 local function on_sandstorm_step(self, event, from, to)
   -- One player
-  broadcastToAll('Step 8:  Sandstorm Moves', stringColorToRGB('Orange'))
-  local card_pos = getObjectFromGUID(GUIDS.sandstorm_card).getPosition()
-  local sandstorm_pos = getObjectFromGUID(GUIDS.sandstorm_token).getPosition()
+  broadcastToAll('Round ' .. round_number .. ', Step 8:  Sandstorm Moves', stringColorToRGB('Orange'))
+  local card_pos = getObjectFromGUID(guids.sandstorm_card).getPosition()
+  local sandstorm_pos = getObjectFromGUID(guids.sandstorm_token).getPosition()
   local owner_color = getClosestFactionMat(card_pos)
   broadcastToAllAction(owner_color, ' moves the Sandstorm to an adjacent region (not the two Outer Regions or Polar Sink)')
   Player[owner_color].pingTable(card_pos)
@@ -138,25 +149,33 @@ end
 
 local function on_end_of_round_step(self, event, from, to)
   -- Simultaneous
-  broadcastToAll('Step 9:  End of Round', stringColorToRGB('Orange'))
+  broadcastToAll('Round ' .. round_number .. ', Step 9:  End of Round', stringColorToRGB('Orange'))
 end
+
+local function on_prev_step(self, event, from, to)
+  if from == 'roll_the_dice_step' and to == 'end_of_round_step' then
+    round_number = round_number - 1
+    local round_marker = getObjectFromGUID(guids.round_marker)
+    local current_pos = round_marker.getPosition()
+    round_marker.setPositionSmooth(current_pos - Vector(3.03,1,0))
+  end
+end
+
 
 --------------------------------------------------------------------------------
 -- Finite State Machine Initializations
 --------------------------------------------------------------------------------
-local GameState = fsm.create({
+GameState = fsm.create({
    initial = GAME_FSM_INITIAL,
    events = GAME_FSM_EVENTS,
    callbacks = {
      on_pregame     = on_pregame,
-     on_setup_game  = on_setup_game, -- transition from pregame to setup_round
-     on_setup_round = on_setup_round, -- beginning of setup round
      on_next_round  = on_next_round,
      on_game_over   = on_game_over
    }
 })
 
-local RoundState = fsm.create({
+RoundState = fsm.create({
    initial = ROUND_FSM_INITIAL,
    events = ROUND_FSM_EVENTS,
    callbacks = {
@@ -169,6 +188,7 @@ local RoundState = fsm.create({
      on_ship_step                 = on_ship_step,
      on_combat_step               = on_combat_step,
      on_sandstorm_step            = on_sandstorm_step,
-     on_end_of_round_step         = on_end_of_round_step
+     on_end_of_round_step         = on_end_of_round_step,
+     on_prev_step                 = on_prev_step
    }
 })

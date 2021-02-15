@@ -1,0 +1,17 @@
+-- do nothing function
+function pass() return end
+
+-- https://stackoverflow.com/a/33511182
+function tableHasValue(tab, val)
+  for index, value in ipairs(tab) do
+    if value == val then return true end
+  end
+  return false
+end
+
+-- https://stackoverflow.com/a/2705804
+function tableLength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end

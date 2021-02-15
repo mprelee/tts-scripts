@@ -1,45 +1,63 @@
-#include game_state
+game_state = require('dune-tdg/game_state')
 
-function editMainButtonLabel(label)
-  local menu = getObjectFromGUID(GUIDS.menu)
-  menu.editButton({index=0,label=label})
-end
 
 function nextStateCallback()
   local current_game_state = GameState.current
   local current_round_state = RoundState.current
   if current_game_state == 'pregame' then
-    GameState.setup_game()
-    editMainButtonLabel('Begin Game')
+    GameState.next_round()
   elseif current_game_state == 'setup_round' then
     GameState.next_round()
     RoundState.next_step()
-    editMainButtonLabel('Next Step')
+  elseif current_game_state == 'postgame' then
+    pass()
   else
-    if current_game_state ~= 'postgame' then
-      if current_round_state == 'end_of_round_step' then
-        if round_number == 6 then
-          GameState.game_over()
-        else
-          GameState.next_round()
-          RoundState.next_step()
-        end
+    if current_round_state == 'end_of_round_step' then
+      if round_number == 6 then
+        GameState.game_over()
       else
+        GameState.next_round()
         RoundState.next_step()
       end
+    else
+      RoundState.next_step()
     end
   end
 end
 
+function prevStateCallback()
+  local current_game_state = GameState.current
+  local current_round_state = RoundState.current
+  if current_game_state == 'pregame' then
+    pass()
+  elseif current_game_state == 'setup_round' then
+    pass()
+  else -- includes 'postgame'
+    broadcastToAll('Returning to previous step.', stringColorToRGB('Orange'))
+    RoundState.prev_step()
+  end
+end
+
 function onLoad()
-  local menu = getObjectFromGUID(GUIDS.menu)
+  local menu = getObjectFromGUID(guids.menu)
+  local center_offset = 0.5
   menu.createButton({
     click_function = 'nextStateCallback',
-    label          = 'Begin Setup',
-    position       = Vector(0,0.2,0.1),
-    width          = 1000,
+    label          = '>>',
+    position       = Vector(center_offset,0.4,0.1),
+    width          = 300,
     height         = 300,
-    font_size      = 200,
+    font_size      = 250,
+    tooltip        = 'Next Step',
+  })
+  menu.createButton({
+    click_function = 'prevStateCallback',
+    label          = '<<',
+    position       = Vector(-center_offset,0.2,0.1),
+    width          = 300,
+    height         = 300,
+    font_size      = 250,
+    tooltip        = 'Previous Step',
   })
   menu.createButton({
     click_function = 'toggleFog',

@@ -208,5 +208,4 @@ function M.create(cfg, target)
   return self
 end
 
---return M
-fsm = M -- dont return since we are using #include
+return M

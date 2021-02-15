@@ -1,33 +1,8 @@
 -- Lots of fun-ctions!
+common = require('common')
+guids = require('dune-tdg/guids')
 
-local GUIDS = {
-  ['protection_card']     = '103219',
-  ['protection6_card']    = '271f4d',
-  ['turn_order_card']     = '969667',
-  ['sandstorm_card']      = '3e9df9',
-  ['landsraad_card']      = 'd9492f',
-  ['common_dice_supply']  = 'b1f1e2',
-  ['unused_components']   = '09c8d0',
-  ['sandstorm_token']     = 'ef4503',
-  ['sandstorm_effect']    = 'ca7876',
-  ['menu']                = 'd5e79c',
-  ['round_marker']        = 'c1b8e3'
-}
-
-LAYOUT_ZONE_GUIDS = {
-  ['Brown'] = '956983'
-}
-
-local READY_BUTTON_GUIDS = {
-  ['Red']    = '64453f',
-  ['Blue']   = '43c2eb',
-  ['Brown']  = '1ab6f0',
-  ['Yellow'] = 'ce11b8',
-  ['Purple'] = 'c830ae',
-  ['White']  = 'b95c12'
-}
-
-local FACTION_TO_COLOR = {
+FACTION_TO_COLOR = {
   ['Atreides']      = 'Red',
   ['Harkonnen']     = 'Blue',
   ['Fremen']        = 'Brown',
@@ -36,7 +11,7 @@ local FACTION_TO_COLOR = {
   ['Bene Gesserit'] = 'White'
 }
 
-local COLOR_TO_FACTION = {
+COLOR_TO_FACTION = {
   ['Red']    = 'Atreides',
   ['Blue']   = 'Harkonnen',
   ['Brown']  = 'Fremen',
@@ -44,24 +19,6 @@ local COLOR_TO_FACTION = {
   ['Purple'] = 'Spacing Guild',
   ['White']  = 'Bene Gesserit'
 }
-
--- do nothing function
-function pass() return end
-
--- https://stackoverflow.com/a/33511182
-function tableHasValue(tab, val)
-  for index, value in ipairs(tab) do
-    if value == val then return true end
-  end
-  return false
-end
-
--- https://stackoverflow.com/a/2705804
-function tableLength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
 
 function getObjectPlayerColor(obj)
   for _, tag in ipairs(obj.getTags()) do
@@ -77,10 +34,11 @@ end
 function broadcastToAllAction(player_color, action)
   broadcastToAll(player_color .. ' [' .. COLOR_TO_FACTION[player_color] .. '] ' .. action, stringColorToRGB(player_color))
 end
-local function dealDice()
+
+function dealDice()
   local seated_players = getSeatedPlayers() --table
-  local unused_components = getObjectFromGUID(GUIDS.unused_components)
-  local common_dice_supply = getObjectFromGUID(GUIDS.common_dice_supply)
+  local unused_components = getObjectFromGUID(guids.unused_components)
+  local common_dice_supply = getObjectFromGUID(guids.common_dice_supply)
   for _, player_color in ipairs(seated_players) do
     local player = Player[player_color] --Player
     -- Get table of position of player's hand
@@ -91,54 +49,59 @@ local function dealDice()
     local dice_pos_1 = dice_pos_offset + 0*player_hand.right --Vector
     local dice_pos_2 = dice_pos_offset + 1*player_hand.right --Vector
     -- Deal dice to table near hands
-    unused_components.takeObject({position=dice_pos_0}) --object
-    unused_components.takeObject({position=dice_pos_1}) --object
-    unused_components.takeObject({position=dice_pos_2}) --object
-    -- Deal 3 dice per player to common supply
-    for i = 1, 3 do
-      common_dice_supply.putObject(unused_components.takeObject()) --object
-    end
+    common_dice_supply.takeObject({position=dice_pos_0}) --object
+    common_dice_supply.takeObject({position=dice_pos_1}) --object
+    common_dice_supply.takeObject({position=dice_pos_2}) --object
   end
-  printToAll((#seated_players * 3) .. " dice in common supply.", stringColorToRGB('Orange'))
+  -- Deal 3 dice per player to common supplys
+  for i = 1, (36-3*(#seated_players)) do
+    unused_components.putObject(common_dice_supply.takeObject()) --object
+  end
 end
 
-function putInFrontOfPlayer(object, player_color, forward_offset)
+function putInFrontOfPlayer(object, player_color, forward_offset, right_offset)
   local forward_offset = forward_offset or 17
+  local right_offset = right_offset or 0
   local player_hand = Player[player_color].getHandTransform()
-  local pos = player_hand.position + forward_offset*player_hand.forward
+  local pos = player_hand.position + forward_offset*player_hand.forward + right_offset*player_hand.right
   object.setRotationSmooth(player_hand.rotation-object.getRotation())
   object.setPositionSmooth(pos)
 end
 
 function dealStartingCards()
-  local unused_components = getObjectFromGUID(GUIDS.unused_components)
+  local unused_components = getObjectFromGUID(guids.unused_components)
   local seated_players    = getSeatedPlayers() --table
-  local protection_card   = getObjectFromGUID(GUIDS.protection_card)
-  local protection6_card  = getObjectFromGUID(GUIDS.protection6_card)
-  local sandstorm_card    = getObjectFromGUID(GUIDS.sandstorm_card)
-  local landsraad_card    = getObjectFromGUID(GUIDS.landsraad_card)
-  local turn_order_card   = getObjectFromGUID(GUIDS.turn_order_card)
+  local protection_card   = getObjectFromGUID(guids.protection_card)
+  local protection6_card  = getObjectFromGUID(guids.protection6_card)
+  local sandstorm_card    = getObjectFromGUID(guids.sandstorm_card)
+  local landsraad_card    = getObjectFromGUID(guids.landsraad_card)
+  local turn_order_card   = getObjectFromGUID(guids.turn_order_card)
+
+  local card_spacing = 3.5
   -- Fremen starts with the Protection Card(s)
   -- Otherwise last player gets card(s)
+  local protection6_card_right_offset = -2*card_spacing
+  local protection_card_right_offset = -1*card_spacing
   if #seated_players == 6 then
-    putInFrontOfPlayer(protection6_card, 'Brown')
-    putInFrontOfPlayer(protection_card, 'Brown')
+    putInFrontOfPlayer(protection6_card, 'Brown', nil, protection6_card_right_offset)
+    putInFrontOfPlayer(protection_card, 'Brown', nil, protection_card_right_offset)
   else
     -- Don't use both protection cards with less than 6
     unused_components.putObject(protection6_card)
     -- Fremen starts with the Landsraad Card
     -- Otherwise last player gets card
     if tableHasValue(seated_players, 'Brown') then
-      putInFrontOfPlayer(protection_card, 'Brown')
+      putInFrontOfPlayer(protection_card, 'Brown', nil, protection_card_right_offset)
     else
-      putInFrontOfPlayer(protection_card, getLastPlayer())
+      putInFrontOfPlayer(protection_card, getLastPlayer(), nil, protection_card_right_offset)
     end
   end
   -- protection_card.use_hands = false
   -- Corrino starts with the Landsraad Card
   -- Otherwise last player gets card
+  local landsraad_card_right_offset = 0*card_spacing
   if tableHasValue(seated_players, 'Yellow') then
-    putInFrontOfPlayer(landsraad_card, 'Yellow')
+    putInFrontOfPlayer(landsraad_card, 'Yellow', nil, landsraad_card_right_offset)
     --landsraad_card.deal(1, 'Yellow')
   else
     --landsraad_card.deal(1, getLastPlayer())
@@ -146,17 +109,19 @@ function dealStartingCards()
   end
   -- Spacing Guild starts with the sandstorm Card
   -- Otherwise last player gets card
+  local sandstorm_card_right_offset = 1*card_spacing
   if tableHasValue(seated_players, 'Purple') then
-    putInFrontOfPlayer(sandstorm_card, 'Purple')
+    putInFrontOfPlayer(sandstorm_card, 'Purple', nil, sandstorm_card_right_offset)
   else
-    putInFrontOfPlayer(sandstorm_card, getLastPlayer())
+    putInFrontOfPlayer(sandstorm_card, getLastPlayer(), nil, sandstorm_card_right_offset)
   end
   -- Bene Gesserit starts with the turn order Card
   -- Otherwise last player gets card
+  local turn_order_card_right_offset = 2*card_spacing
   if tableHasValue(seated_players, 'White') then
-    putInFrontOfPlayer(turn_order_card, 'White')
+    putInFrontOfPlayer(turn_order_card, 'White', nil, turn_order_card_right_offset)
   else
-    putInFrontOfPlayer(turn_order_card, getLastPlayer())
+    putInFrontOfPlayer(turn_order_card, getLastPlayer(), nil, turn_order_card_right_offset)
   end
   -- Drop cards to table
   --protection_card.use_hands = false
@@ -171,11 +136,6 @@ function setTurnOrder()
   local seated_players = getSeatedPlayers()
   local xpos = {}
   for _, token in ipairs(faction_turn_order_tokens) do
-    --for _, player_color in pairs(seated_players) do
-    --  if token.hasTag(player_color) then
-    --    xpos[player_color] = token.getPosition().x
-    --  end
-    --end
     local player_color = getObjectPlayerColor(token)
     if player_color then
       xpos[player_color] = token.getPosition().x
@@ -185,7 +145,7 @@ function setTurnOrder()
 end
 
 function cleanupUnusedFactions()
-  local unused_components = getObjectFromGUID(GUIDS.unused_components)
+  local unused_components = getObjectFromGUID(guids.unused_components)
   for _, player_color in pairs(Player.getAvailableColors()) do
     if not Player[player_color].seated then
       local unused_objects = getObjectsWithTag(player_color)
@@ -221,7 +181,7 @@ function prepareLoyaltyTokens()
   loyalty_deck.shuffle()
 end
 
-local fog_is_down = true
+fog_is_down = true
 function toggleFog()
   local allObjects = getAllObjects()
   for _, o in ipairs(allObjects) do
@@ -246,7 +206,7 @@ end
 
 function getLastPlayer()
   -- Turns.order undefined for one player...
-if #getSeatedPlayers() == 1 then
+  if #getSeatedPlayers() == 1 then
     return getSeatedPlayers()[1]
   else
     return Turns.order[#Turns.order]
@@ -270,7 +230,7 @@ function getReadyButtons()
   local seated_colors = getSeatedPlayers()
   local ready_buttons = {}
   for _, player_color in ipairs(seated_colors) do
-    ready_buttons[player_color] = getObjectFromGUID(READY_BUTTON_GUIDS[player_color])
+    ready_buttons[player_color] = getObjectFromGUID(guids.ready_button[player_color])
   end
   return ready_buttons
 end
@@ -285,7 +245,7 @@ end
 function areAllPlayersReady()
   local ready_buttons = getReadyButtons()
   local result = true
-  for player_color, button in pairs(ready_buttons) do
+  for plader_color, button in pairs(ready_buttons) do
     result = result and button.call('getLockout')
   end
   return result

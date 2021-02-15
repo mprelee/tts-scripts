@@ -1,5 +1,4 @@
 -- Before including this, need to set player color
--- player_color = 'Red'
 -- Otherwise default to grey
 player_color = player_color or 'Grey'
 --Runs when the scripted button inside the button is clicked

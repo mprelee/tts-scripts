@@ -1,0 +1,24 @@
+M = {
+  ['protection_card']     = '103219',
+  ['protection6_card']    = '271f4d',
+  ['turn_order_card']     = '969667',
+  ['sandstorm_card']      = '3e9df9',
+  ['landsraad_card']      = 'd9492f',
+  ['common_dice_supply']  = 'b1f1e2',
+  ['unused_components']   = '09c8d0',
+  ['sandstorm_token']     = 'ef4503',
+  ['sandstorm_effect']    = 'ca7876',
+  ['menu']                = 'd5e79c',
+  ['round_marker']        = 'c1b8e3'
+}
+
+M.ready_button = {
+  ['Red']    = '64453f',
+  ['Blue']   = '43c2eb',
+  ['Brown']  = '1ab6f0',
+  ['Yellow'] = 'ce11b8',
+  ['Purple'] = 'c830ae',
+  ['White']  = 'b95c12'
+}
+
+return M
