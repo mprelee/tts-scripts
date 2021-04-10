@@ -1,6 +1,6 @@
 -- Before including this, need to set player color
 -- Otherwise default to grey
-player_color = player_color or 'Grey'
+local player_color = player_color or 'Grey'
 --Runs when the scripted button inside the button is clicked
 function buttonPress()
     if lockout == false and Player[player_color].seated then
