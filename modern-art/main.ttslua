@@ -106,6 +106,93 @@ function printBids()
   end
 end
 
+function getMoneyValue(moneytoken)
+  if moneytoken.hasTag("value1") then return 1
+  elseif moneytoken.hasTag("value5") then return 5
+  elseif moneytoken.hasTag("value10") then return 10
+  elseif moneytoken.hasTag("value20") then return 20
+  elseif moneytoken.hasTag("value50") then return 50
+  elseif moneytoken.hasTag("value100") then return 100
+  else return 0 end
+end
+
+function onObjectRandomize(object, playerColor)
+  log(type(object))
+  log(object.getQuantity())
+  log(object.getTags())
+  local position = object.getPosition()
+  local value = getMoneyValue(object)
+  local takeBank = nil
+  local putBank = nil
+  if object.hasTag('moneytoken') and object.getQuantity() == -1 then
+    log('single token')
+    local numTake = 0
+    if value == 1 then
+      return
+    elseif value == 5 then
+      putBank = getObjectFromGUID(GUID.bank5)
+      takeBank = getObjectFromGUID(GUID.bank1)
+      numTake = 5
+    elseif value == 10 then
+      putBank = getObjectFromGUID(GUID.bank10)
+      takeBank = getObjectFromGUID(GUID.bank5)
+      numTake = 2
+    elseif value == 20 then
+      putBank = getObjectFromGUID(GUID.bank20)
+      takeBank = getObjectFromGUID(GUID.bank10)
+      numTake = 2
+    elseif value == 50 then
+      putBank = getObjectFromGUID(GUID.bank50)
+      takeBank = getObjectFromGUID(GUID.bank10)
+      numTake = 5
+    elseif value == 100 then
+      putBank = getObjectFromGUID(GUID.bank100)
+      takeBank = getObjectFromGUID(GUID.bank50)
+      numTake = 2
+    end
+    putBank.putObject(object)
+    for i = 1, numTake do
+      takeBank.takeObject({position=position})
+    end
+  -- stack of objects
+  elseif object.getQuantity() > 0 and object.hasTag('moneytoken') then
+    log('multiple tokens')
+    local takeValue = 0
+    if value == 1 then
+      putBank = getObjectFromGUID(GUID.bank1)
+      takeBank = getObjectFromGUID(GUID.bank5)
+      takeValue = 5
+    elseif value == 5 then
+      putBank = getObjectFromGUID(GUID.bank5)
+      takeBank = getObjectFromGUID(GUID.bank10)
+      takeValue = 10
+    elseif value == 10 then
+      putBank = getObjectFromGUID(GUID.bank10)
+      takeBank = getObjectFromGUID(GUID.bank20)
+      takeValue = 20
+    elseif value == 20 then
+      putBank = getObjectFromGUID(GUID.bank20)
+      takeBank = getObjectFromGUID(GUID.bank100)
+      takeValue = 100
+    elseif value == 50 then
+      putBank = getObjectFromGUID(GUID.bank50)
+      takeBank = getObjectFromGUID(GUID.bank100)
+      takeValue = 100
+    elseif value == 100 then
+      return
+    end
+    log('here')
+    while object.getQuantity()*value >= takeValue do
+      log('here')
+      for i = 1, takeValue/value do
+        putBank.putObject(object.takeObject())
+      end
+      takeBank.takeObject({position=position})
+    end
+  end
+end
+
+
 function onLoad()
   local drawZone = getObjectFromGUID(GUID.drawZone)
   drawZone.createButton({
