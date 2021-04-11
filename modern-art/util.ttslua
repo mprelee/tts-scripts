@@ -1,0 +1,132 @@
+function createDebugMenu()
+  local menu = getObjectFromGUID(GUID.menu)
+  local center_offset = -1.6
+  menu.createButton({
+    click_function = 'resetGame',
+    label          = 'resetGame',
+    position       = Vector(center_offset,-1.0,-2.1),
+    width          = 699,
+    height         = 199,
+    font_size      = 119,
+    tooltip        = 'Reset and create a new game',
+  })
+  menu.createButton({
+    click_function = 'collectDiscards',
+    label          = 'collectDiscards',
+    position       = Vector(center_offset,-1.0,-1.7),
+    width          = 799,
+    height         = 199,
+    font_size      = 119,
+    tooltip        = 'Collect discards and place in pile',
+  })
+  menu.createButton({
+    click_function = 'getCurrentRound',
+    label          = 'getCurrentRound',
+    position       = Vector(center_offset,-1.0,-1.-1),
+    width          = 799,
+    height         = 199,
+    font_size      = 119,
+    tooltip        = 'Get current round number',
+  })
+end
+
+function getMoneyValue(moneytoken)
+  if moneytoken.hasTag("value1") then return 1
+  elseif moneytoken.hasTag("value5") then return 5
+  elseif moneytoken.hasTag("value10") then return 10
+  elseif moneytoken.hasTag("value20") then return 20
+  elseif moneytoken.hasTag("value50") then return 50
+  elseif moneytoken.hasTag("value100") then return 100
+  else return 0 end
+end
+function onObjectNumberTyped( object,  player_color,  number)
+  if object.hasTag('moneytoken') then
+    local position = object.getPosition()
+    local value = getMoneyValue(object)
+    object.destruct()
+    local bank = nil
+    local numTake = 0
+    if value == 5 then
+      bank = getObjectFromGUID(GUID.bank1)
+      numTake = 5
+    elseif value == 10 then
+      bank = getObjectFromGUID(GUID.bank5)
+      numTake = 2
+    elseif value == 20 then
+      bank = getObjectFromGUID(GUID.bank10)
+      numTake = 2
+    elseif value == 50 then
+      bank = getObjectFromGUID(GUID.bank10)
+      numTake = 5
+    elseif value == 100 then
+      bank = getObjectFromGUID(GUID.bank50)
+      numTake = 2
+    end
+    for i = 1, numTake do
+      bank.takeObject({position=position})
+    end
+  end
+end
+function cleanupMoneyTokens()
+  for _, token in ipairs(getObjectsWithTag('moneytoken')) do
+    token.destruct()
+  end
+end
+
+-- https://www.reddit.com/r/tabletopsimulator/comments/c0c3qf/help_drawing_a_card_from_a_deck_inside_a/
+function findDeck(script_zone_guid)
+    --First, use getObjects to get a list of anything in that zone
+    local objectsInZone = getObjectFromGUID(script_zone_guid).getObjects()
+    --Then we search through each entry in that table
+    for i, v in pairs(objectsInZone) do
+        --Tag gives us a nice definition of an item. In this case, "Deck"
+        if v.tag == 'Deck' then
+            foundDeck = v
+        end
+    end
+    --If we found a deck, this function returns foundDeck
+    --If not, it returns nil and prints and error
+    if foundDeck then
+        return foundDeck
+    else
+        printToAll("No deck found in scripting zone.", {1,1,1})
+        return nil
+    end
+end
+
+
+function resetValueTileStacks()
+  local stack10 = group(getObjectsWithAllTags({'valuetile','value10'}))[1]
+  stack10.setRotationSmooth(VECTOR_ZERO)
+  stack10.setPositionSmooth(POSITION.valueTileStack10)
+  local stack20 = group(getObjectsWithAllTags({'valuetile','value20'}))[1]
+  stack20.setRotationSmooth(VECTOR_ZERO)
+  stack20.setPositionSmooth(POSITION.valueTileStack20)
+  local stack30 = group(getObjectsWithAllTags({'valuetile','value30'}))[1]
+  stack30.setRotationSmooth(VECTOR_ZERO)
+  stack30.setPositionSmooth(POSITION.valueTileStack30)
+end
+
+function resetDrawPile()
+  local paintings = getObjectsWithTag('painting')
+  for _, painting in ipairs(paintings) do
+    painting.setRotationSmooth(Vector(0,0,180))
+    painting.setPositionSmooth(POSITION.drawPile)
+  end
+  local deck = group(paintings)[1]
+  deck.shuffle()
+end
+
+-- snippets
+-- Deal money
+--if currentRound == 0 then
+--  for _, player_color in ipairs(getSeatedPlayers()) do
+--    local hiddenZonePos = getHiddenZone(player_color).getPosition()
+--    print(hiddenZonePos)
+--    for i = 1,5 do getObjectFromGUID(GUID.bank1).takeObject({position=hiddenZonePos}) end
+--    for i = 1,1 do getObjectFromGUID(GUID.bank5).takeObject({position=hiddenZonePos}) end
+--    for i = 1,2 do getObjectFromGUID(GUID.bank10).takeObject({position=hiddenZonePos}) end
+--    for i = 1,1 do getObjectFromGUID(GUID.bank20).takeObject({position=hiddenZonePos}) end
+--    for i = 1,1 do getObjectFromGUID(GUID.bank50).takeObject({position=hiddenZonePos}) end
+--  end
+--end

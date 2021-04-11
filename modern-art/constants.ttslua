@@ -1,0 +1,53 @@
+DEBUG=true
+
+NUM_DEALS = {
+  [1] = {
+    [1] = 10,
+    [2] = 6,
+    [3] = 6,
+    [4] = 0 }, -- for debug
+  [3] = {
+    [1] = 10,
+    [2] = 6,
+    [3] = 6,
+    [4] = 0 },
+  [4] = {
+    [1] = 9,
+    [2] = 4,
+    [3] = 4,
+    [4] = 0 },
+  [5] = {
+    [1] = 8,
+    [2] = 3,
+    [3] = 3,
+    [4] = 0 }
+}
+
+VECTOR_ZERO = Vector(0,0,0)
+
+POSITION = {
+  ['valueTileStack10'] = {-14.00, 1.80, -40.00},
+  ['valueTileStack20'] = {-18.00, 1.80, -40.00},
+  ['valueTileStack30'] = {-22.00, 1.80, -40.00},
+}
+
+GUID = {
+  ['gameboardZone'] = '3235fd',
+  ['gameboard'] = '9de90d',
+  ['drawDeck'] = '3771af',
+  ['drawZone'] = '8041c2',
+  ['discardZone'] = '53904d',
+  ['bank1'] = '94a867',
+  ['bank5'] = 'c67c1e',
+  ['bank10'] = '530368',
+  ['bank20'] = 'bfa084',
+  ['bank50'] = '5dbeda',
+  ['bank100'] = '84647e',
+  ['hiddenZones'] = {
+    ['Red'] = '143dd0',
+    ['Yellow'] = '5806a1',
+    ['Green'] = 'a363c0',
+    ['Blue'] = 'e2af5d',
+    ['Pink'] = '792a70'
+  }
+}
