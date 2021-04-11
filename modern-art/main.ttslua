@@ -117,15 +117,11 @@ function getMoneyValue(moneytoken)
 end
 
 function onObjectRandomize(object, playerColor)
-  log(type(object))
-  log(object.getQuantity())
-  log(object.getTags())
   local position = object.getPosition()
   local value = getMoneyValue(object)
   local takeBank = nil
   local putBank = nil
   if object.hasTag('moneytoken') and object.getQuantity() == -1 then
-    log('single token')
     local numTake = 0
     if value == 1 then
       return
@@ -156,7 +152,6 @@ function onObjectRandomize(object, playerColor)
     end
   -- stack of objects
   elseif object.getQuantity() > 0 and object.hasTag('moneytoken') then
-    log('multiple tokens')
     local takeValue = 0
     if value == 1 then
       putBank = getObjectFromGUID(GUID.bank1)
@@ -181,14 +176,12 @@ function onObjectRandomize(object, playerColor)
     elseif value == 100 then
       return
     end
-    log('here')
     while object.getQuantity()*value >= takeValue do
-      log('here')
+      takeBank.takeObject({position=position})
       for i = 1, takeValue/value do
         putBank.putObject(object.takeObject())
-      end
-      takeBank.takeObject({position=position})
     end
+  end
   end
 end
 
