@@ -1,15 +1,5 @@
 constants = require('modern-art/constants')
 
-function getMoneyValue(moneytoken)
-  if moneytoken.hasTag("value1") then return 1
-  elseif moneytoken.hasTag("value5") then return 5
-  elseif moneytoken.hasTag("value10") then return 10
-  elseif moneytoken.hasTag("value20") then return 20
-  elseif moneytoken.hasTag("value50") then return 50
-  elseif moneytoken.hasTag("value100") then return 100
-  else return 0 end
-end
-
 function sumCashInZone(zone_guid, ythresh)
   local ythresh = ythresh or -9999
   local zone = getObjectFromGUID(zone_guid)
@@ -118,6 +108,7 @@ end
 
 function onObjectRandomize(object, playerColor)
   local position = object.getPosition()
+  local rotation = object.getRotation()
   local value = getMoneyValue(object)
   local takeBank = nil
   local putBank = nil
@@ -148,7 +139,7 @@ function onObjectRandomize(object, playerColor)
     end
     putBank.putObject(object)
     for i = 1, numTake do
-      takeBank.takeObject({position=position})
+      takeBank.takeObject({position=position,rotation=rotation})
     end
   -- stack of objects
   elseif object.getQuantity() > 0 and object.hasTag('moneytoken') then
@@ -177,7 +168,7 @@ function onObjectRandomize(object, playerColor)
       return
     end
     while object.getQuantity()*value >= takeValue do
-      takeBank.takeObject({position=position})
+      takeBank.takeObject({position=position,rotation=rotation})
       for i = 1, takeValue/value do
         putBank.putObject(object.takeObject())
     end
