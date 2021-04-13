@@ -185,7 +185,7 @@ function onObjectLeaveContainer(container, leave_object)
       leave_object.setRotationSmooth(rotation)
       leave_object.setPositionSmooth(position)
     end
-    leave_object.addContextMenuItem("Announce Auction", announceAuction)
+    leave_object.addContextMenuItem("Auction", announceAuction)
   end
 end
 
