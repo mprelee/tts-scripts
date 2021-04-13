@@ -1,0 +1,30 @@
+function getMoneyValue(moneytoken)
+  assert(moneytoken.hasTag('moneytoken'))
+  if moneytoken.hasTag("value1") then return 1
+  elseif moneytoken.hasTag("value5") then return 5
+  elseif moneytoken.hasTag("value10") then return 10
+  elseif moneytoken.hasTag("value20") then return 20
+  elseif moneytoken.hasTag("value50") then return 50
+  elseif moneytoken.hasTag("value100") then return 100
+  else return 0 end
+end
+
+function getArtist(obj)
+  assert(obj.hasTag('Painting'))
+  if obj.hasTag('hick') then return 'Hick'
+  elseif obj.hasTag('ivory') then return 'Ivory'
+  elseif obj.hasTag('okamoto') then return 'Okamoto'
+  elseif obj.hasTag('mondrian') then return 'Mondrian'
+  elseif obj.hasTag('kaminski') then return 'Kaminski'
+  else return 'ERROR_NO_ARTIST_TAG' end
+end
+
+function getAuctionType(obj)
+  assert(obj.hasTag('Painting'))
+  if obj.hasTag('open') then return 'an Open Auction'
+  elseif obj.hasTag('hidden') then return 'a Hidden Auction'
+  elseif obj.hasTag('oncearound') then return 'a Once-Around Auction'
+  elseif obj.hasTag('fixedprice') then return 'a Fixed-Price Auction'
+  elseif obj.hasTag('double') then return 'a Double Auction'
+  else return 'ERROR_NO_AUCTION_TYPE_TAG' end
+end

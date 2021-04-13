@@ -1,4 +1,5 @@
 constants = require('modern-art/constants')
+tags = require('modern-art/tags')
 
 function sumCashInZone(zone_guid, ythresh)
   local ythresh = ythresh or -9999
@@ -23,7 +24,6 @@ function getDrawDeckCount()
   if drawDeck then return drawDeck.getQuantity()
   else return 0 end
 end
-
 function collectDiscards()
   local paintings = getObjectsWithTag('painting')
   local discardPos = getObjectFromGUID(GUID.discardZone).getPosition()
@@ -89,22 +89,19 @@ function dealNextRound()
   end
 end
 
+function printBid(player_color)
+  local bid = getPlayerBid(player_color)
+  local msg = player_color .. ' bid $' .. bid .. 'k'
+  local asRGB = stringColorToRGB(player_color)
+  broadcastToAll(msg, asRGB)
+end
+
 function printBids()
   for _, player_color in ipairs(getSeatedPlayers()) do
-    local bid = getPlayerBid(player_color)
-    printToAll(player_color .. ' bid $' .. bid, stringColorToRGB(player_color))
+    printBid(player_color)
   end
 end
 
-function getMoneyValue(moneytoken)
-  if moneytoken.hasTag("value1") then return 1
-  elseif moneytoken.hasTag("value5") then return 5
-  elseif moneytoken.hasTag("value10") then return 10
-  elseif moneytoken.hasTag("value20") then return 20
-  elseif moneytoken.hasTag("value50") then return 50
-  elseif moneytoken.hasTag("value100") then return 100
-  else return 0 end
-end
 
 function onObjectRandomize(object, playerColor)
   local position = object.getPosition()
@@ -171,8 +168,24 @@ function onObjectRandomize(object, playerColor)
       takeBank.takeObject({position=position,rotation=rotation})
       for i = 1, takeValue/value do
         putBank.putObject(object.takeObject())
+      end
     end
   end
+end
+
+function onObjectLeaveContainer(container, leave_object)
+  if leave_object.hasTag('Painting') then
+    function announceAuction(player_color)
+      broadcastToAll(player_color..' is holding '..getAuctionType(leave_object)
+      .. ' for a painting by '..getArtist(leave_object), stringColorToRGB(player_color))
+      local easel = getObjectFromGUID(GUID.easels[player_color])
+      local snapPoint = easel.getSnapPoints()[1]
+      local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
+      local rotation = easel.getRotation()  + Vector(90,0,90)
+      leave_object.setRotationSmooth(rotation)
+      leave_object.setPositionSmooth(position)
+    end
+    leave_object.addContextMenuItem("Announce Auction", announceAuction)
   end
 end
 
@@ -201,19 +214,29 @@ function onLoad()
   local gameboard = getObjectFromGUID(GUID.gameboard)
   gameboard.createButton({
         click_function = 'printBids',
-        label          = 'Print Bids',
+        label          = 'Print ALL Bids',
         position       = Vector(0, 0, 1.2),
         width          = 800,
         height         = 80,
         font_size      = 100,
-        tooltip        = 'Cleanup sold paintings'
-      })
+        tooltip        = 'Display everyone\'s current bid in chat'
+  })
 
+  for player_color, zone in pairs(GUID.hiddenZones) do
+    local buttonCallbackName = 'print'..player_color..'Bid'
+    -- Store in global namespace
+	  _G[buttonCallbackName] = function(obj, color, alt) printBid(player_color) end
+    local z = getObjectFromGUID(zone)
+    z.createButton({
+          click_function = buttonCallbackName,
+          label          = 'Print ' .. player_color .. ' Bid',
+          position       = Vector(0, -0.07, 0.64),
+          width          = 500,
+          height         = 20,
+          font_size      = 50,
+          color          = player_color,
+          tooltip        = 'Print ' .. player_color .. '\'s current bid in chat'
+    })
+  end
 
-  --for _, player_color in ipairs(getSeatedPlayers()) do
-  --  local zone_guid = GUID.hiddenZones[player_color]
-  --  local total = sumCashInZone(zone_guid)
-  --  print(player_color .. ' has $' .. total)
-  --  print(player_color .. ' bids $' .. getPlayerBid(player_color))
-  --end
 end

@@ -34,7 +34,7 @@ POSITION = {
 GUID = {
   ['gameboardZone'] = '3235fd',
   ['gameboard'] = '9de90d',
-  ['drawDeck'] = '3771af',
+  ['drawDeck'] = 'a9bebb',
   ['drawZone'] = '8041c2',
   ['discardZone'] = '53904d',
   ['bank1'] = '94a867',
@@ -49,5 +49,12 @@ GUID = {
     ['Green'] = 'a363c0',
     ['Blue'] = 'e2af5d',
     ['Pink'] = '792a70'
+  },
+  ['easels'] = {
+    ['Red'] = 'e10624',
+    ['Yellow'] = '8f6bf9',
+    ['Green'] = '244547',
+    ['Blue'] = 'df3c13',
+    ['Pink'] = '7ac455'
   }
 }
