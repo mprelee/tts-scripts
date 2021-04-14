@@ -1,5 +1,4 @@
 --deck.ttslua
-
 function onLoad()
   self.shuffle()
 end

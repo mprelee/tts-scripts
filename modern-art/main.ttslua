@@ -20,7 +20,7 @@ end
 
 function collectDiscards()
   local paintings = getObjectsWithTag('painting')
-  local discardPos = getObjectFromGUID(guids.discardZone).getPosition()
+  local discardPos = POSITION.discardPile
   for _, painting in ipairs(paintings) do
     if (not painting.is_face_down) and (painting.getPosition()[2] < 2 ) then
       painting.setRotationSmooth(Vector(0,0,0))
@@ -32,19 +32,19 @@ end
 -- Use deck size to get current round
 function getCurrentRound()
   local numPlayers = #getSeatedPlayers()
-  local drawDeckCount = getObjectFromGUID(string)
+  local deckCount = math.abs(getObjectFromGUID(guids.deck).getQuantity())
   local dealsPerPlayer = NUM_DEALS[numPlayers]
   local round1Count = 70 - numPlayers*dealsPerPlayer[1]
   local round2Count = round1Count - numPlayers*dealsPerPlayer[2]
   local round3Count = round2Count - numPlayers*dealsPerPlayer[3]
-  if DEBUG then log('drawDeckCount=' .. drawDeckCount) end
-  if drawDeckCount == 70 then
+  if DEBUG then log('deckCount=' .. deckCount) end
+  if deckCount == 70 then
     return 0
-  elseif drawDeckCount >= round1Count then
+  elseif deckCount >= round1Count then
     return 1
-  elseif drawDeckCount >= round2Count then
+  elseif deckCount >= round2Count then
     return 2
-  elseif drawDeckCount >= round3Count then
+  elseif deckCount >= round3Count then
     return 3
   end
 end
@@ -77,7 +77,7 @@ function dealNextRound()
   local currentRound = getCurrentRound()
   local nextRound = getNextRound()
   if nextRound - currentRound == 1 then
-    local deck = getObjectFromGUID(guids.drawDeck)
+    local deck = getObjectFromGUID(guids.deck)
     local numPlayers = #getSeatedPlayers()
     deck.deal(NUM_DEALS[numPlayers][nextRound])
   end
@@ -190,27 +190,25 @@ end
 
 
 function onLoad()
-  local drawZone = getObjectFromGUID(guids.drawZone)
-  drawZone.createButton({
-      click_function = 'dealNextRound',
-      label          = 'Deal',
-      position       = Vector(0,-0.45,.7),
-      width          = 400,
-      height         = 80,
-      font_size      = 100,
-      tooltip        = 'Deal next round if ready.'
-    })
-  local discardZone = getObjectFromGUID(guids.discardZone)
-  discardZone.createButton({
-      click_function = 'collectDiscards',
-      label          = 'Cleanup',
-      position       = Vector(0, -0.45,0.7),
-      width          = 400,
-      height         = 80,
-      font_size      = 100,
-      tooltip        = 'Cleanup sold paintings'
-    })
   local gameboard = getObjectFromGUID(guids.gameboard)
+  gameboard.createButton({
+        click_function = 'dealNextRound',
+        label          = 'Deal',
+        position       = Vector(-2.25,0,0.8),
+        width          = 400,
+        height         = 80,
+        font_size      = 100,
+        tooltip        = 'Deal next round if ready.',
+      })
+  gameboard.createButton({
+        click_function = 'collectDiscards',
+        label          = 'Cleanup',
+        position       = Vector(-3.12,0,0.8),
+        width          = 400,
+        height         = 80,
+        font_size      = 100,
+        tooltip        = 'Place sold paintings in discard',
+        })
   gameboard.createButton({
         click_function = 'printBids',
         label          = 'Print ALL Bids',
