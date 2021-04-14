@@ -175,14 +175,20 @@ end
 function onObjectLeaveContainer(container, leave_object)
   if leave_object.hasTag('Painting') then
     function announceAuction(player_color)
+      local gavel = getObjectFromGUID(guids.gavel)
+      local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
+      gavel.setPosition(layoutPos)
       broadcastToAll(player_color..' is holding '..getAuctionType(leave_object)
       .. ' for a painting by '..getArtist(leave_object), stringColorToRGB(player_color))
       local easel = getObjectFromGUID(guids.easels[player_color])
       local snapPoint = easel.getSnapPoints()[1]
       local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
       local rotation = easel.getRotation()  + Vector(90,0,90)
+      leave_object.setPosition(position+Vector(0,40,0))
       leave_object.setRotationSmooth(rotation)
       leave_object.setPositionSmooth(position)
+      --leave_object.setRotation(rotation)
+      --leave_object.setPosition(position)
     end
     leave_object.addContextMenuItem("Auction", announceAuction)
   end

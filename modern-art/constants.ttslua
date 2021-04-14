@@ -13,6 +13,7 @@ guids = {
   ['gameboardZone'] = '3235fd',
   ['gameboard'] = '9de90d',
   ['deck'] = 'a9bebb',
+  ['gavel'] = 'b1cd0e',
   ['bank1'] = '94a867',
   ['bank5'] = 'c67c1e',
   ['bank10'] = '530368',
