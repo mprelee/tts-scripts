@@ -31,7 +31,7 @@ POSITION = {
   ['valueTileStack30'] = {-22.00, 1.80, -40.00},
 }
 
-GUID = {
+guids = {
   ['gameboardZone'] = '3235fd',
   ['gameboard'] = '9de90d',
   ['drawDeck'] = 'a9bebb',

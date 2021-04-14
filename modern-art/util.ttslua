@@ -30,43 +30,6 @@ function createDebugMenu()
   })
 end
 
-function getMoneyValue(moneytoken)
-  if moneytoken.hasTag("value1") then return 1
-  elseif moneytoken.hasTag("value5") then return 5
-  elseif moneytoken.hasTag("value10") then return 10
-  elseif moneytoken.hasTag("value20") then return 20
-  elseif moneytoken.hasTag("value50") then return 50
-  elseif moneytoken.hasTag("value100") then return 100
-  else return 0 end
-end
-function onObjectNumberTyped( object,  player_color,  number)
-  if object.hasTag('moneytoken') then
-    local position = object.getPosition()
-    local value = getMoneyValue(object)
-    object.destruct()
-    local bank = nil
-    local numTake = 0
-    if value == 5 then
-      bank = getObjectFromGUID(GUID.bank1)
-      numTake = 5
-    elseif value == 10 then
-      bank = getObjectFromGUID(GUID.bank5)
-      numTake = 2
-    elseif value == 20 then
-      bank = getObjectFromGUID(GUID.bank10)
-      numTake = 2
-    elseif value == 50 then
-      bank = getObjectFromGUID(GUID.bank10)
-      numTake = 5
-    elseif value == 100 then
-      bank = getObjectFromGUID(GUID.bank50)
-      numTake = 2
-    end
-    for i = 1, numTake do
-      bank.takeObject({position=position})
-    end
-  end
-end
 function cleanupMoneyTokens()
   for _, token in ipairs(getObjectsWithTag('moneytoken')) do
     token.destruct()
