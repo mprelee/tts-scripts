@@ -9,6 +9,13 @@ function tableHasValue(tab, val)
   return false
 end
 
+function findKey(tab, val)
+  for key, value in pairs(tab) do
+    if value == val then return key end
+  end
+  return nil
+end
+
 -- https://stackoverflow.com/a/2705804
 function tableLength(T)
   local count = 0

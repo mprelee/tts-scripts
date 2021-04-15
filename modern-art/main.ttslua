@@ -1,12 +1,25 @@
-constants = require('modern-art/constants')
+common = require('common')
+guids = require('modern-art/guids')
 tags = require('modern-art/tags')
 
-function sumCashInZone(zone_guid, ythresh)
-  local ythresh = ythresh or -9999
+DEBUG=true
+NUM_DEALS = {
+  [1] = { [1] = 10, [2] = 6, [3] = 6, [4] = 0 }, -- for debug
+  [2] = { [1] = 10, [2] = 6, [3] = 6, [4] = 0 }, -- for debug
+  [3] = { [1] = 10, [2] = 6, [3] = 6, [4] = 0 },
+  [4] = { [1] =  9, [2] = 4, [3] = 4, [4] = 0 },
+  [5] = { [1] =  8, [2] = 3, [3] = 3, [4] = 0 }
+}
+discardPilePosition = {21.96, 2.11, -35.95}
+
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---- Bidding and cash manipulation
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function sumCashInZone(zone_guid)
   local zone = getObjectFromGUID(zone_guid)
   local total = 0
   for _, obj in ipairs(zone.getObjects()) do
-    if obj.hasTag('moneytoken') and obj.getPosition()[2] > ythresh then
+    if obj.hasTag('moneytoken') then
       total = total + math.abs(obj.getQuantity())*getMoneyValue(obj)
     end
   end
@@ -14,95 +27,128 @@ function sumCashInZone(zone_guid, ythresh)
 end
 
 function getPlayerBid(player_color)
-    local zone_guid = guids.hiddenZones[player_color]
-    return sumCashInZone(zone_guid,0.7)
+  return sumCashInZone(guids.biddingZones[player_color])
 end
 
+function printBid(player_color)
+  local msg = player_color .. ' bid $' .. getPlayerBid(player_color) .. 'k'
+  broadcastToAll(msg, stringColorToRGB(player_color))
+end
+
+function printAllBids()
+  for _, player_color in ipairs(getSeatedPlayers()) do
+    printBid(player_color)
+  end
+end
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---- Card manipulation
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function collectDiscards()
   local paintings = getObjectsWithTag('painting')
-  local discardPos = POSITION.discardPile
   for _, painting in ipairs(paintings) do
-    if (not painting.is_face_down) and (painting.getPosition()[2] < 2 ) then
+    --if (not painting.is_face_down) and (painting.getPosition()[2] < 2 ) then
+
+    if (not painting.is_face_down) and (tryGetHoldingPlayer(painting) == nil) then
       painting.setRotationSmooth(Vector(0,0,0))
-      painting.setPositionSmooth(discardPos)
+      painting.setPositionSmooth(discardPilePosition)
     end
   end
 end
 
--- Use deck size to get current round
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---- Round and gameboard manipulation
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function getValueTileValue(obj)
+  if obj.hasTag('valuetile') then
+    if obj.hasTag('value10') then
+      return 10
+    elseif obj.hasTag('value20') then
+      return 20
+    elseif obj.hasTag('value30') then
+      return 30
+    else
+      return 0
+    end
+  else
+    return 0
+  end
+end
+
+function getArtistValueState(round)
+  local state = {
+      ['hick']     = {0,0,0,0},
+      ['ivory']    = {0,0,0,0},
+      ['okamato']  = {0,0,0,0},
+      ['mondrian'] = {0,0,0,0},
+      ['kaminski'] = {0,0,0,0}, }
+  for round = 1, 4 do
+    for artist, guid in pairs(guids.valueZones[round]) do
+      local zone = getObjectFromGUID(guid)
+      for _, obj in ipairs(zone.getObjects()) do
+        state[artist][round] = getValueTileValue(obj)
+      end
+    end
+  end
+  return state
+end
+
+function getCurrentRoundArtistValue(currentRound, artist)
+  local state = getArtistValueState()
+  local val = 0
+  if state[artist][currentRound] > 0 then
+    for i = 1, currentRound do
+      val = val + state[artist][i]
+    end
+  end
+  return val
+end
+
 function getCurrentRound()
+  local state = getArtistValueState()
+  -- Apologies to my CS profs....this isnt the most efficient but it wont slow
+  --   down performance or anything.
+  local maxRound = 0
+  for artist, values in pairs(state) do
+    for index, value in ipairs(values) do
+      -- If this artist has a value token, update maxRound
+      if value > 0 then
+        maxRound = math.max(maxRound, index)
+      end
+    end
+  end
+  return maxRound + 1
+end
+
+function dealNextRound()
   local numPlayers = #getSeatedPlayers()
+  local currentRound = getCurrentRound()
   local deckCount = math.abs(getObjectFromGUID(guids.deck).getQuantity())
   local dealsPerPlayer = NUM_DEALS[numPlayers]
   local round1Count = 70 - numPlayers*dealsPerPlayer[1]
   local round2Count = round1Count - numPlayers*dealsPerPlayer[2]
   local round3Count = round2Count - numPlayers*dealsPerPlayer[3]
-  if DEBUG then log('deckCount=' .. deckCount) end
-  if deckCount == 70 then
-    return 0
-  elseif deckCount >= round1Count then
-    return 1
-  elseif deckCount >= round2Count then
-    return 2
-  elseif deckCount >= round3Count then
-    return 3
-  end
-end
-
-function getNextRound()
-  local zone = getObjectFromGUID(guids.gameboardZone)
-  local valueCounts = {
-    ['10'] = 0,
-    ['20'] = 0,
-    ['30'] = 0
-  }
-  for _, obj in ipairs(zone.getObjects()) do
-    if obj.hasTag('valuetile') then
-      if obj.hasTag('value10') then
-        valueCounts['10'] = valueCounts['10'] + 1
-      elseif obj.hasTag('value20') then
-        valueCounts['20'] = valueCounts['20'] + 1
-      elseif obj.hasTag('value30') then
-        valueCounts['30'] = valueCounts['30'] + 1
-      end
-    end
-  end
-  local minValueCount = math.min(valueCounts['10'],valueCounts['20'],valueCounts['30'])
-  local nextRound = minValueCount+1
-  if DEBUG then log('nextRound=' .. nextRound) end
-  return nextRound
-end
-
-function dealNextRound()
-  local currentRound = getCurrentRound()
-  local nextRound = getNextRound()
-  if nextRound - currentRound == 1 then
+  if (deckCount == 70 and currentRound == 1)
+      or (deckCount >= round1Count and currentRound == 2)
+      or (deckCount >= round2Count and currentRound == 3)
+      or (deckCount >= round3Count and currentRound == 4) then
     local deck = getObjectFromGUID(guids.deck)
-    local numPlayers = #getSeatedPlayers()
-    deck.deal(NUM_DEALS[numPlayers][nextRound])
+    deck.deal(NUM_DEALS[numPlayers][currentRound])
   end
 end
 
-function printBid(player_color)
-  local bid = getPlayerBid(player_color)
-  local msg = player_color .. ' bid $' .. bid .. 'k'
-  local asRGB = stringColorToRGB(player_color)
-  broadcastToAll(msg, asRGB)
-end
+-- pass button, hick auction type error (once around), ready button, sort bag
 
-function printBids()
-  for _, player_color in ipairs(getSeatedPlayers()) do
-    printBid(player_color)
-  end
-end
-
-
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---- Events
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function onObjectRandomize(object, playerColor)
   if object.hasTag('Deck') then
     deck.shuffle()
     return
+  elseif not object.hasTag('moneytoken') then
+    return
   end
-  if not object.hasTag('moneytoken') then return end
   local position = object.getPosition()
   local rotation = object.getRotation()
   local value = getMoneyValue(object)
@@ -187,15 +233,42 @@ function onObjectLeaveContainer(container, leave_object)
       leave_object.setPosition(position+Vector(0,40,0))
       leave_object.setRotationSmooth(rotation)
       leave_object.setPositionSmooth(position)
-      --leave_object.setRotation(rotation)
-      --leave_object.setPosition(position)
     end
     leave_object.addContextMenuItem("Auction", announceAuction)
+    --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
   end
+end
+
+function tryGetHoldingPlayer(obj)
+  for _, zone in ipairs(obj.getZones()) do
+    local guid = zone.guid
+    local player_color = findKey(guids.handZones, guid)
+    if player_color ~= nil then return player_color end
+  end
+  return nil
 end
 
 
 function onLoad()
+  --for _, obj in ipairs(getAllObjects()) do
+  --  if obj.hasTag('Painting') then
+  --    function announceAuction(player_color)
+  --      local gavel = getObjectFromGUID(guids.gavel)
+  --      local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
+  --      gavel.setPositionSmooth(layoutPos)
+  --      broadcastToAll(player_color..' is holding '..getAuctionType(obj)
+  --      .. ' for a painting by '..getArtist(leave_object), stringColorToRGB(player_color))
+  --      local easel = getObjectFromGUID(guids.easels[player_color])
+  --      local snapPoint = easel.getSnapPoints()[1]
+  --      local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
+  --      local rotation = easel.getRotation()  + Vector(90,0,90)
+  --      obj.setPosition(position+Vector(0,40,0))
+  --      obj.setRotationSmooth(rotation)
+  --      obj.setPositionSmooth(position)
+  --    end
+  --    obj.addContextMenuItem("Auction", announceAuction)
+  --  end
+  --end
   local gameboard = getObjectFromGUID(guids.gameboard)
   gameboard.createButton({
         click_function = 'dealNextRound',
@@ -216,7 +289,7 @@ function onLoad()
         tooltip        = 'Place sold paintings in discard',
         })
   gameboard.createButton({
-        click_function = 'printBids',
+        click_function = 'printAllBids',
         label          = 'Print ALL Bids',
         position       = Vector(0, 0, 1.2),
         width          = 800,
@@ -234,6 +307,7 @@ function onLoad()
           click_function = buttonCallbackName,
           label          = 'Print ' .. player_color .. ' Bid',
           position       = Vector(0, -0.07, 0.64),
+          rotation       = Vector(0, 180, 0),
           width          = 500,
           height         = 20,
           font_size      = 50,
@@ -241,5 +315,4 @@ function onLoad()
           tooltip        = 'Print ' .. player_color .. '\'s current bid in chat'
     })
   end
-
 end
