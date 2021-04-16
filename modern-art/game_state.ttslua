@@ -72,7 +72,10 @@ function dealNextRound()
   end
 end
 
+-- TODO something more elegant
+local endOfGameFlag = false
 function triggerEndOfRound()
+  if endOfGameFlag then return end
   -- 1. Get round number
   local round = getCurrentRound()
   local counts = countFaceupPaintings()
@@ -85,9 +88,13 @@ function triggerEndOfRound()
   end
   if not isRoundOver then
     broadcastToAll("The round is still in progress!")
-    --return
+    return
   end
   updateArtistValueState(round)
   Wait.time(collectPayoutsAndDiscards, 1)
-  setCurrentRound(round+1)
+  if round < 4 then
+    setCurrentRound(round+1)
+  else
+    endOfGameFlag = true
+  end
 end

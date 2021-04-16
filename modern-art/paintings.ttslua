@@ -38,9 +38,6 @@ function countFaceupPaintings()
     [ARTIST5] = 0, }
   for _, painting in ipairs(getFaceupPaintings()) do
     local artist = getArtist(painting)
-    print(painting==nil)
-    print(artist)
-    print(painting)
     counts[artist] = counts[artist] + 1
   end
   return counts
