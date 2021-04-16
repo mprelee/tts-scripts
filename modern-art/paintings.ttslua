@@ -36,21 +36,20 @@ function countFaceupPaintings()
     ['kaminski'] = 0, }
   for _, painting in ipairs(getFaceupPaintings()) do
     local artist = getArtist(painting)
-    print(artist)
     counts[artist] = counts[artist] + 1
   end
   return counts
 end
 
-
+--[[
+Self explanatory...collect discards for new round
+--]]
 function collectDiscards()
   local paintings = getObjectsWithTag('painting')
-  for _, painting in ipairs(paintings) do
-    --if (not painting.is_face_down) and (painting.getPosition()[2] < 2 ) then
-    if (not painting.is_face_down) and (tryGetHoldingPlayer(painting) == nil) then
+  local position = getObjectFromGUID(guids.discardZone).getPosition()
+  for _, painting in ipairs(getFaceupPaintings()) do
       painting.setRotationSmooth(Vector(0,0,0))
-      painting.setPositionSmooth(discardPilePosition)
-    end
+      painting.setPositionSmooth(position)
   end
 end
 

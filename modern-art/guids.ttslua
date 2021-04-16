@@ -2,6 +2,7 @@ local guids = {
   ['roundTrackerDie'] = 'd53beb',
   ['gameboard'] = '9de90d',
   ['deck'] = 'e35a20',
+  ['discardZone'] = 'b67ee2',
   ['gavel'] = 'b1cd0e',
   ['bank'] = {
     [1]   = '94a867',

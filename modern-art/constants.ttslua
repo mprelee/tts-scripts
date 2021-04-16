@@ -6,7 +6,6 @@ NUM_DEALS = {
   [4] = { [1] =  9, [2] = 4, [3] = 4, [4] = 0 },
   [5] = { [1] =  8, [2] = 3, [3] = 3, [4] = 0 }
 }
-discardPilePosition = {21.96, 2.11, -35.95}
 
 ARTISTS = {'hick','ivory','okamoto','mondrian','kaminski'}
 ARTIST_ORDER = {}
