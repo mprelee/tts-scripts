@@ -94,7 +94,7 @@ TODO:  Find a better way to do This
 TODO:  Fix a bug where hitting "UNDO" will remove the context menu item
 ]]
 function onObjectLeaveContainer(container, leave_object)
-  if leave_object.hasTag('Painting') then
+  if leave_object.hasTag('painting') then
     function announceAuction(player_color)
       --local gavel = getObjectFromGUID(guids.gavel)
       --local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
