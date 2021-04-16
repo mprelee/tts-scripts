@@ -1,6 +1,7 @@
----- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
----- Round and gameboard manipulation
----- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Game state
+--[[
+Author:  Madeline Prelee, 2021-04-16
+--]]
 
 function getArtistValueState(round)
   local state = {
@@ -25,16 +26,17 @@ function updateArtistValueState(round)
   local counts = countFaceupPaintings()
   local ranks = {'hick','ivory','okamoto','mondrian','kaminski'}
   local function sortFunction(a,b)
-    if a ~= b then
-      return counts[a] < counts[b]
-    else
+    if counts[a] == counts[b] then
       return ARTIST_ORDER[a] < ARTIST_ORDER[b]
+    else
+      return counts[a] > counts[b]
     end
   end
   ranks = table.sort(ranks,sortFunction)
   print(round)
   for i = 1,3 do
     local artist = ranks[i]
+    print(artist)
     local tokenBag = getObjectFromGUID(guids.valueTokenBags[(4-i)*10])
     local valueSpace = getObjectFromGUID(guids.valueZones[round][artist])
     local position = valueSpace.getPosition()
@@ -56,4 +58,41 @@ end
 function getCurrentRound()
   local roundTrackerDie = getObjectFromGUID(guids.roundTrackerDie)
   return roundTrackerDie.getValue()
+end
+
+function dealNextRound()
+  local numPlayers = #getSeatedPlayers()
+  local currentRound = getCurrentRound()
+  local deckCount = math.abs(getObjectFromGUID(guids.deck).getQuantity())
+  local dealsPerPlayer = NUM_DEALS[numPlayers]
+  local round1Count = 70 - numPlayers*dealsPerPlayer[1]
+  local round2Count = round1Count - numPlayers*dealsPerPlayer[2]
+  local round3Count = round2Count - numPlayers*dealsPerPlayer[3]
+  if (deckCount == 70 and currentRound == 1)
+      or (deckCount >= round1Count and currentRound == 2)
+      or (deckCount >= round2Count and currentRound == 3)
+      or (deckCount >= round3Count and currentRound == 4) then
+    local deck = getObjectFromGUID(guids.deck)
+    deck.deal(NUM_DEALS[numPlayers][currentRound])
+  end
+end
+
+function triggerEndOfRound()
+  -- 1. Get round number
+  local round = getCurrentRound()
+  local counts = countFaceupPaintings()
+  local isRoundOver = false
+  for artist, count in pairs(counts) do
+    -- Note:  shoulid never be larger than 5....
+    if count >= 5 then
+      isRoundOver = true
+    end
+  end
+  if not isRoundOver then
+    broadcastToAll("The round is still in progress!")
+    --return -- TODO uncomment!!!
+  end
+  -- Calculate artist values
+  updateArtistValueState(round)
+  -- Pay paintings and discard
 end

@@ -53,3 +53,12 @@ function collectDiscards()
     end
   end
 end
+
+function tryGetHoldingPlayer(obj)
+  for _, zone in ipairs(obj.getZones()) do
+    local guid = zone.guid
+    local player_color = findKey(guids.handZones, guid)
+    if player_color ~= nil then return player_color end
+  end
+  return nil
+end

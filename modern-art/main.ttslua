@@ -5,60 +5,9 @@ require('common')
 require('modern-art/constants')
 require('modern-art/tag_utilities')
 require('modern-art/buttons')
-require('modern-art/game_state_management')
+require('modern-art/game_state')
 require('modern-art/money')
 require('modern-art/paintings')
-
-
-
-function dealNextRound()
-  local numPlayers = #getSeatedPlayers()
-  local currentRound = getCurrentRound()
-  local deckCount = math.abs(getObjectFromGUID(guids.deck).getQuantity())
-  local dealsPerPlayer = NUM_DEALS[numPlayers]
-  local round1Count = 70 - numPlayers*dealsPerPlayer[1]
-  local round2Count = round1Count - numPlayers*dealsPerPlayer[2]
-  local round3Count = round2Count - numPlayers*dealsPerPlayer[3]
-  if (deckCount == 70 and currentRound == 1)
-      or (deckCount >= round1Count and currentRound == 2)
-      or (deckCount >= round2Count and currentRound == 3)
-      or (deckCount >= round3Count and currentRound == 4) then
-    local deck = getObjectFromGUID(guids.deck)
-    deck.deal(NUM_DEALS[numPlayers][currentRound])
-  end
-end
-
-function tryGetHoldingPlayer(obj)
-  for _, zone in ipairs(obj.getZones()) do
-    local guid = zone.guid
-    local player_color = findKey(guids.handZones, guid)
-    if player_color ~= nil then return player_color end
-  end
-  return nil
-end
-
-
-function triggerEndOfRound()
-  -- 1. Get round number
-  local round = getCurrentRound()
-  local counts = countFaceupPaintings()
-  local isRoundOver = false
-  for artist, count in pairs(counts) do
-    -- Note:  shoulid never be larger than 5....
-    if count >= 5 then
-      isRoundOver = true
-    end
-  end
-  if not isRoundOver then
-    broadcastToAll("The round is still in progress!")
-    --return -- TODO uncomment!!!
-  end
-  -- Calculate artist values
-  updateArtistValueState(round)
-  -- Pay paintings and discard
-end
-
-
 
 function onLoad()
   createGameBoardButtons()
