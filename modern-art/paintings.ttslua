@@ -1,0 +1,55 @@
+--paintings.ttslua
+--[[
+Various functions useful for manipulating paintings (cards) in Modern Art. If I
+was better at writing OOP lua code, this would probably be functions defined in
+the "painting" class and various instance methods
+Original author:  Madeline Prelee, 2021-04-16
+--]]
+
+--[[
+Retrieves all paintings that are faceup and not in someone's hand. In terms
+of game state, these are all paintings that contribute to end-of-round artist
+valuation.
+--]]
+function getFaceupPaintings()
+  local paintings = {}
+  for _, obj in ipairs(getObjects()) do
+    if (obj.hasTag('painting'))
+        and (not obj.is_face_down)
+        and (tryGetHoldingPlayer(obj) == nil) then
+      table.insert(paintings, obj)
+    end
+  end
+  return paintings
+end
+
+--[[
+Used to determine end-of-round state and to tally the top 3 artists
+Returns a table of artists and the number of their faceup paintings
+--]]
+function countFaceupPaintings()
+  local counts = {
+    ['hick']     = 0,
+    ['ivory']    = 0,
+    ['okamoto']  = 0,
+    ['mondrian'] = 0,
+    ['kaminski'] = 0, }
+  for _, painting in ipairs(getFaceupPaintings()) do
+    local artist = getArtist(painting)
+    print(artist)
+    counts[artist] = counts[artist] + 1
+  end
+  return counts
+end
+
+
+function collectDiscards()
+  local paintings = getObjectsWithTag('painting')
+  for _, painting in ipairs(paintings) do
+    --if (not painting.is_face_down) and (painting.getPosition()[2] < 2 ) then
+    if (not painting.is_face_down) and (tryGetHoldingPlayer(painting) == nil) then
+      painting.setRotationSmooth(Vector(0,0,0))
+      painting.setPositionSmooth(discardPilePosition)
+    end
+  end
+end

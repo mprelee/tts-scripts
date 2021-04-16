@@ -10,21 +10,37 @@ function getMoneyValue(moneytoken)
 end
 
 function getArtist(obj)
-  assert(obj.hasTag('Painting'))
-  if obj.hasTag('hick') then return 'Hick'
-  elseif obj.hasTag('ivory') then return 'Ivory'
-  elseif obj.hasTag('okamoto') then return 'Okamoto'
-  elseif obj.hasTag('mondrian') then return 'Mondrian'
-  elseif obj.hasTag('kaminski') then return 'Kaminski'
+  assert(obj.hasTag('painting'))
+  if obj.hasTag('hick') then return 'hick'
+  elseif obj.hasTag('ivory') then return 'ivory'
+  elseif obj.hasTag('okamoto') then return 'okamoto'
+  elseif obj.hasTag('mondrian') then return 'mondrian'
+  elseif obj.hasTag('kaminski') then return 'kaminski'
   else return 'ERROR_NO_ARTIST_TAG' end
 end
 
 function getAuctionType(obj)
-  assert(obj.hasTag('Painting'))
+  assert(obj.hasTag('painting'))
   if obj.hasTag('open') then return 'an Open Auction'
   elseif obj.hasTag('hidden') then return 'a Hidden Auction'
   elseif obj.hasTag('oncearound') then return 'a Once-Around Auction'
   elseif obj.hasTag('fixedprice') then return 'a Fixed-Price Auction'
   elseif obj.hasTag('double') then return 'a Double Auction'
   else return 'ERROR_NO_AUCTION_TYPE_TAG' end
+end
+
+function getValueTileValue(obj)
+  if obj.hasTag('valuetile') then
+    if obj.hasTag('value10') then
+      return 10
+    elseif obj.hasTag('value20') then
+      return 20
+    elseif obj.hasTag('value30') then
+      return 30
+    else
+      return 0
+    end
+  else
+    return 0
+  end
 end

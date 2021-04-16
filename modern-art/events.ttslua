@@ -1,0 +1,115 @@
+-- events.ttslua
+--[[
+A place to put global event handlers, such as making change for money
+Author:  Madeline Prelee, 2021-04-16
+--]]
+
+--[[
+Inspired by the AMAZING Twilight Imperium IV mod, pressing 'R' on money tokens
+will exchange them for larger/smaller bills.  This could be more intelligent,
+like condensing an arbitrary set of bills into the smallest-set of component
+bills, but it works decent enough already.
+TODO:  Make this even fancier...
+]]
+function onObjectRandomize(object, playerColor)
+  if object.hasTag('Deck') then
+    deck.shuffle()
+    return
+  elseif not object.hasTag('moneytoken') then
+    return
+  end
+  local position = object.getPosition()
+  local rotation = object.getRotation()
+  local value = getMoneyValue(object)
+  local takeBank = nil
+  local putBank = nil
+  if object.hasTag('moneytoken') and object.getQuantity() == -1 then
+    local numTake = 0
+    if value == 1 then
+      return
+    elseif value == 5 then
+      putBank = getObjectFromGUID(guids.banks[5])
+      takeBank = getObjectFromGUID(guids.bank[1])
+      numTake = 5
+    elseif value == 10 then
+      putBank = getObjectFromGUID(guids.bank[10])
+      takeBank = getObjectFromGUID(guids.bank[5])
+      numTake = 2
+    elseif value == 20 then
+      putBank = getObjectFromGUID(guids.bank[20])
+      takeBank = getObjectFromGUID(guids.bank[10])
+      numTake = 2
+    elseif value == 50 then
+      putBank = getObjectFromGUID(guids.bank[50])
+      takeBank = getObjectFromGUID(guids.bank[10])
+      numTake = 5
+    elseif value == 100 then
+      putBank = getObjectFromGUID(guids.bank[100])
+      takeBank = getObjectFromGUID(guids.bank[50])
+      numTake = 2
+    end
+    putBank.putObject(object)
+    for i = 1, numTake do
+      takeBank.takeObject({position=position,rotation=rotation})
+    end
+  -- stack of objects
+  elseif object.getQuantity() > 0 and object.hasTag('moneytoken') then
+    local takeValue = 0
+    if value == 1 then
+      putBank = getObjectFromGUID(guids.bank[1])
+      takeBank = getObjectFromGUID(guids.bank[5])
+      takeValue = 5
+    elseif value == 5 then
+      putBank = getObjectFromGUID(guids.bank[5])
+      takeBank = getObjectFromGUID(guids.bank[10])
+      takeValue = 10
+    elseif value == 10 then
+      putBank = getObjectFromGUID(guids.bank[10])
+      takeBank = getObjectFromGUID(guids.bank[20])
+      takeValue = 20
+    elseif value == 20 then
+      putBank = getObjectFromGUID(guids.bank[20])
+      takeBank = getObjectFromGUID(guids.bank[100])
+      takeValue = 100
+    elseif value == 50 then
+      putBank = getObjectFromGUID(guids.bank[50])
+      takeBank = getObjectFromGUID(guids.bank[100])
+      takeValue = 100
+    elseif value == 100 then
+      return
+    end
+    while object.getQuantity()*value >= takeValue do
+      takeBank.takeObject({position=position,rotation=rotation})
+      for i = 1, takeValue/value do
+        putBank.putObject(object.takeObject())
+      end
+    end
+  end
+end
+
+--[[
+This is a bit of a hack to ensure all cards have 'Auction' context menu
+available.
+TODO:  Find a better way to do This
+TODO:  Fix a bug where hitting "UNDO" will remove the context menu item
+]]
+function onObjectLeaveContainer(container, leave_object)
+  if leave_object.hasTag('Painting') then
+    function announceAuction(player_color)
+      --local gavel = getObjectFromGUID(guids.gavel)
+      --local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
+      --gavel.setPositionSmooth(layoutPos)
+      broadcastToAll(player_color..' is holding '..getAuctionType(leave_object)
+      .. ' for a painting by '..getArtist(leave_object), stringColorToRGB(player_color))
+      local easel = getObjectFromGUID(guids.easels[player_color])
+      local snapPoint = easel.getSnapPoints()[1]
+      local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
+      local rotation = easel.getRotation()  + Vector(90,0,90)
+      leave_object.setPosition(position+Vector(0,40,0))
+      leave_object.setRotationSmooth(rotation)
+      leave_object.setPositionSmooth(position)
+    end
+    leave_object.addContextMenuItem("Auction", announceAuction)
+    --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
+  end
+end

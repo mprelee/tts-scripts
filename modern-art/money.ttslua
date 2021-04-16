@@ -1,0 +1,68 @@
+function sumCashInZone(zone_guid)
+  local zone = getObjectFromGUID(zone_guid)
+  local total = 0
+  for _, obj in ipairs(zone.getObjects()) do
+    if obj.hasTag('moneytoken') then
+      total = total + math.abs(obj.getQuantity())*getMoneyValue(obj)
+    end
+  end
+  return total
+end
+
+function getPlayerBid(player_color)
+  return sumCashInZone(guids.biddingZones[player_color])
+end
+
+function printBid(player_color)
+  local bid = getPlayerBid(player_color)
+  local msg = ''
+  if bid > -1 then
+    msg = player_color .. ' bid $' .. bid .. 'k'
+  else
+    msg = player_color .. ' passes'
+  end
+  broadcastToAll(msg, stringColorToRGB(player_color))
+end
+
+function printAllBids()
+  for _, player_color in ipairs(getSeatedPlayers()) do
+    printBid(player_color)
+  end
+end
+
+function buyPainting(auctioneer, buyer)
+  local buyerBidZone = getObjectFromGUID(guids.biddingZones[buyer])
+  local buyerLayoutZone = getObjectFromGUID(guids.layoutZones[buyer])
+  local easel = getObjectFromGUID(guids.easels[auctioneer])
+  local easelZone = getObjectFromGUID(guids.easelZones[auctioneer])
+  local msg = ''
+  local price = '$'..getPlayerBid(buyer)..'k'
+  if auctioneer == buyer then
+    msg = 'SOLD to the auctioneer! '..buyer..' pays the bank '..price
+  else
+    msg = 'SOLD to '..buyer..', who pays '..price..' to '..auctioneer
+  end
+  broadcastToAll(msg,stringColorToRGB(buyer))
+  for _, token in ipairs(buyerBidZone.getObjects()) do
+    if token.hasTag('moneytoken') then
+      if auctioneer == buyer then
+        local value = getMoneyValue(token)
+        local bankBag = getObjectFromGUID(guids.bank[value])
+        bankBag.putObject(token)
+      else
+        local position = easel.getPosition()+8*easelZone.getTransformForward()
+        local rotation = easelZone.getRotation() + Vector(0,-180,0)
+        token.setPositionSmooth(position)
+        token.setRotationSmooth(rotation)
+      end
+    end
+  end
+  for _, obj in ipairs(easelZone.getObjects()) do
+    if obj.hasTag('painting') then
+      local position = buyerLayoutZone.getPosition()+Vector(0,3,0)
+      local rotation = buyerLayoutZone.getRotation()+Vector(0,-180,0)
+      obj.setPositionSmooth(position)
+      obj.setRotationSmooth(rotation)
+    end
+  end
+end

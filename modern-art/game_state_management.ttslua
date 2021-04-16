@@ -1,0 +1,59 @@
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---- Round and gameboard manipulation
+---- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function getArtistValueState(round)
+  local state = {
+      ['hick']     = {0,0,0,0},
+      ['ivory']    = {0,0,0,0},
+      ['okamoto']  = {0,0,0,0},
+      ['mondrian'] = {0,0,0,0},
+      ['kaminski'] = {0,0,0,0}, }
+  for round = 1, 4 do
+    for artist, guid in pairs(guids.valueZones[round]) do
+      local zone = getObjectFromGUID(guid)
+      for _, obj in ipairs(zone.getObjects()) do
+        state[artist][round] = getValueTileValue(obj)
+      end
+    end
+  end
+  return state
+end
+
+
+function updateArtistValueState(round)
+  local counts = countFaceupPaintings()
+  local ranks = {'hick','ivory','okamoto','mondrian','kaminski'}
+  local function sortFunction(a,b)
+    if a ~= b then
+      return counts[a] < counts[b]
+    else
+      return ARTIST_ORDER[a] < ARTIST_ORDER[b]
+    end
+  end
+  ranks = table.sort(ranks,sortFunction)
+  print(round)
+  for i = 1,3 do
+    local artist = ranks[i]
+    local tokenBag = getObjectFromGUID(guids.valueTokenBags[(4-i)*10])
+    local valueSpace = getObjectFromGUID(guids.valueZones[round][artist])
+    local position = valueSpace.getPosition()
+    tokenBag.takeObject({position=position})
+  end
+end
+
+function getCurrentRoundArtistValue(currentRound, artist)
+  local state = getArtistValueState()
+  local val = 0
+  if state[artist][currentRound] > 0 then
+    for i = 1, currentRound do
+      val = val + state[artist][i]
+    end
+  end
+  return val
+end
+
+function getCurrentRound()
+  local roundTrackerDie = getObjectFromGUID(guids.roundTrackerDie)
+  return roundTrackerDie.getValue()
+end
