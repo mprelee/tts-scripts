@@ -3,22 +3,14 @@
 Author:  Madeline Prelee, 2021-04-16
 --]]
 
-function getArtistValueState(round)
-  local state = {
-      ['hick']     = {0,0,0,0},
-      ['ivory']    = {0,0,0,0},
-      ['okamoto']  = {0,0,0,0},
-      ['mondrian'] = {0,0,0,0},
-      ['kaminski'] = {0,0,0,0}, }
-  for round = 1, 4 do
-    for artist, guid in pairs(guids.valueZones[round]) do
-      local zone = getObjectFromGUID(guid)
-      for _, obj in ipairs(zone.getObjects()) do
-        state[artist][round] = getValueTileValue(obj)
-      end
+function getGameBoardValue(round, artist)
+  local zone = getObjectFromGUID(guids['valueZones'][round][artist])
+  for _, obj in ipairs(zone.getObjects()) do
+    if obj.hasTag('valuetile') then
+      return getValueTileValue(obj)
     end
   end
-  return state
+  return 0
 end
 
 
@@ -42,13 +34,10 @@ function updateArtistValueState(round)
   end
 end
 
-function getCurrentRoundArtistValue(currentRound, artist)
-  local state = getArtistValueState()
+function getArtistValue(artist)
   local val = 0
-  if state[artist][currentRound] > 0 then
-    for i = 1, currentRound do
-      val = val + state[artist][i]
-    end
+  for round = 1, getCurrentRound() do
+    val = val + getGameBoardValue(round,artist)
   end
   return val
 end
@@ -62,6 +51,7 @@ function setCurrentRound(round)
   local roundTrackerDie = getObjectFromGUID(guids.roundTrackerDie)
   if round >= 1 and round <= 4 then
     roundTrackerDie.setValue(round)
+    roundTrackerDie.interactable=false
   end
 end
 
@@ -97,10 +87,7 @@ function triggerEndOfRound()
     broadcastToAll("The round is still in progress!")
     --return
   end
-  -- Calculate artist values
   updateArtistValueState(round)
-  -- Pay paintings and discard
-  collectDiscards()
-  -- Update round
+  Wait.time(collectPayoutsAndDiscards, 1)
   setCurrentRound(round+1)
 end

@@ -6,8 +6,12 @@ NUM_DEALS = {
   [4] = { [1] =  9, [2] = 4, [3] = 4, [4] = 0 },
   [5] = { [1] =  8, [2] = 3, [3] = 3, [4] = 0 }
 }
-
-ARTISTS = {'hick','ivory','okamoto','mondrian','kaminski'}
+ARTIST1 = 'hick'
+ARTIST2 = 'ivory'
+ARTIST3 = 'okamoto'
+ARTIST4 = 'mondrian'
+ARTIST5 = 'kaminski'
+ARTISTS = {ARTIST1, ARTIST2, ARTIST3, ARTIST4, ARTIST5}
 ARTIST_ORDER = {}
 for idx, artist in ipairs(ARTISTS) do
   ARTIST_ORDER[artist] = idx

@@ -29,11 +29,11 @@ Returns a table of artists and the number of their faceup paintings
 --]]
 function countFaceupPaintings()
   local counts = {
-    ['hick']     = 0,
-    ['ivory']    = 0,
-    ['okamoto']  = 0,
-    ['mondrian'] = 0,
-    ['kaminski'] = 0, }
+    [ARTIST1] = 0,
+    [ARTIST2] = 0,
+    [ARTIST3] = 0,
+    [ARTIST4] = 0,
+    [ARTIST5] = 0, }
   for _, painting in ipairs(getFaceupPaintings()) do
     local artist = getArtist(painting)
     counts[artist] = counts[artist] + 1
@@ -44,12 +44,24 @@ end
 --[[
 Self explanatory...collect discards for new round
 --]]
-function collectDiscards()
-  local paintings = getObjectsWithTag('painting')
-  local position = getObjectFromGUID(guids.discardZone).getPosition()
+function collectPayoutsAndDiscards()
+  local discardPosition = getObjectFromGUID(guids.discardZone).getPosition()
+  local bank10 = getObjectFromGUID(guids.bank[10])
+  local bank20 = getObjectFromGUID(guids.bank[20])
   for _, painting in ipairs(getFaceupPaintings()) do
+      local artist = getArtist(painting)
+      local value = getArtistValue(artist)
+      local moneyPosition = painting.getPosition()
       painting.setRotationSmooth(Vector(0,0,0))
-      painting.setPositionSmooth(position)
+      painting.setPositionSmooth(discardPosition)
+      if value == 30 then
+        bank10.takeObject({position=moneyPosition})
+        bank20.takeObject({position=moneyPosition})
+      elseif value == 20 then
+        bank20.takeObject({position=moneyPosition})
+      elseif value == 10 then
+        bank10.takeObject({position=moneyPosition})
+      end
   end
 end
 
