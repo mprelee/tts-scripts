@@ -43,19 +43,37 @@ function countFaceupPaintings()
   return counts
 end
 
+function discardPainting(obj)
+  if obj.hasTag('painting') then
+    local discardPosition = getObjectFromGUID(guids.discardZone).getPosition()
+    obj.setRotationSmooth(Vector(0,0,0))
+    obj.setPositionSmooth(discardPosition)
+  end
+end
+
+function discardEasels()
+  for _, zone_guid in ipairs(guids.easelZones) do
+    local zone = getObjectFromGUID(zone_guid)
+    for _, obj in ipairs(zone.getObjects()) do
+      if obj.hasTag('painting') then
+        discardPainting(obj)
+      end
+    end
+  end
+end
+
+
 --[[
 Self explanatory...collect discards for new round
 --]]
 function collectPayoutsAndDiscards()
-  local discardPosition = getObjectFromGUID(guids.discardZone).getPosition()
   local bank10 = getObjectFromGUID(guids.bank[10])
   local bank20 = getObjectFromGUID(guids.bank[20])
   for _, painting in ipairs(getFaceupPaintings()) do
       local artist = getArtist(painting)
       local value = getArtistValue(artist)
       local moneyPosition = painting.getPosition()
-      painting.setRotationSmooth(Vector(0,0,0))
-      painting.setPositionSmooth(discardPosition)
+      discardPainting(painting)
       if value == 30 then
         bank10.takeObject({position=moneyPosition})
         bank20.takeObject({position=moneyPosition})
