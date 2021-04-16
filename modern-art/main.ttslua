@@ -2,12 +2,13 @@
 
 guids = require('modern-art/guids')
 require('common')
-require('modern-art/constants')
-require('modern-art/tag_utilities')
 require('modern-art/buttons')
+require('modern-art/constants')
+require('modern-art/events')
 require('modern-art/game_state')
 require('modern-art/money')
 require('modern-art/paintings')
+require('modern-art/tag_utilities')
 
 function onLoad()
   createGameBoardButtons()
