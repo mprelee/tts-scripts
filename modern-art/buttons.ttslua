@@ -9,15 +9,15 @@ function createGameBoardButtons()
         font_size      = 98,
         tooltip        = 'Deal next round if ready.',
       })
-  gameboard.createButton({
-        click_function = 'triggerEndOfRound',
-        label          = 'End Round',
-        position       = Vector(-3.12, 0, 0.7),
-        width          = 550,
-        height         = 78,
-        font_size      = 98,
-        tooltip        = 'Trigger end of round payouts and cleanup',
-        })
+  --gameboard.createButton({
+  --      click_function = 'discardEasels',
+  --      label          = 'debug',
+  --      position       = Vector(-3.12, 0, 0.7),
+  --      width          = 550,
+  --      height         = 78,
+  --      font_size      = 98,
+  --      tooltip        = 'debug',
+  --      })
   gameboard.createButton({
         click_function = 'printAllBids',
         label          = 'Print ALL Bids',

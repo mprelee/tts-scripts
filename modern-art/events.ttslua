@@ -99,17 +99,41 @@ function onObjectLeaveContainer(container, leave_object)
       --local gavel = getObjectFromGUID(guids.gavel)
       --local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
       --gavel.setPositionSmooth(layoutPos)
-      broadcastToAll(player_color..' is holding '..getAuctionType(leave_object)
-      .. ' for a painting by '..getArtist(leave_object), stringColorToRGB(player_color))
+      local msg = player_color
       local easel = getObjectFromGUID(guids.easels[player_color])
       local snapPoint = easel.getSnapPoints()[1]
+      local artist = getArtist(leave_object)
+      local auction = getAuctionType(leave_object)
       local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
       local rotation = easel.getRotation()  + Vector(90,0,90)
+      if auction == 'a Double Auction' then
+        position = position + 2*getObjectFromGUID(guids.easelZones[player_color]).getTransformForward()
+      end
       leave_object.setPosition(position+Vector(0,40,0))
       leave_object.setRotationSmooth(rotation)
       leave_object.setPositionSmooth(position)
+      local announce = function()
+        if isRoundOver() then
+          msg = msg..' plays a painting by '..artist..' and triggers end of round.'
+          Wait.time(triggerEndOfRound,2)
+        else
+          msg = msg..' is holding '..auction..' for a painting by '..artist
+        end
+        broadcastToAll(msg, stringColorToRGB(player_color))
+      end
+      Wait.time(announce,0.5)
     end
     leave_object.addContextMenuItem("Auction", announceAuction)
+
     --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
   end
 end
+
+
+--function onObjectEnterZone(zone, enter_object)
+--  for _, g in pairs(guids.layoutZones) do
+--    if zone.guid == g then
+--      zone.LayoutZone.layout()
+--    end
+--  end
+--end

@@ -59,10 +59,11 @@ function buyPainting(auctioneer, buyer)
   end
   for _, obj in ipairs(easelZone.getObjects()) do
     if obj.hasTag('painting') then
-      local position = buyerLayoutZone.getPosition()+Vector(0,3,0)
+      local position = buyerLayoutZone.getPosition()
       local rotation = buyerLayoutZone.getRotation()+Vector(0,-180,0)
       obj.setPositionSmooth(position)
       obj.setRotationSmooth(rotation)
+      Wait.time(function() buyerLayoutZone.LayoutZone.layout() end, .7)
     end
   end
 end

@@ -1,5 +1,7 @@
 -- TODO ready button, sort bag
 
+--#include C:\Users\mprel\Documents\tts-scripts\lib\console\console++
+
 guids = require('modern-art/guids')
 require('common')
 require('modern-art/buttons')
