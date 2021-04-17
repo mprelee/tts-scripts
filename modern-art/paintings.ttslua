@@ -6,6 +6,15 @@ the "painting" class and various instance methods
 Original author:  Madeline Prelee, 2021-04-16
 --]]
 
+function isInDiscard(obj)
+  for _, x in ipairs(getObjectFromGUID(guids.discardZone).getObjects()) do
+    if x.guid == obj.guid then
+      return true
+    end
+  end
+  return false
+end
+
 --[[
 Retrieves all paintings that are faceup and not in someone's hand. In terms
 of game state, these are all paintings that contribute to end-of-round artist
@@ -18,8 +27,9 @@ function getFaceupPaintings()
         and (not obj.hasTag('Deck') )
         and (not obj.hasTag('Deck(Clone)') )
         and (not obj.is_face_down)
-        and (tryGetHoldingPlayer(obj) == nil) then
-      table.insert(paintings, obj)
+        and (tryGetHoldingPlayer(obj) == nil)
+        and (not isInDiscard(obj)) then
+    table.insert(paintings, obj)
     end
   end
   return paintings
@@ -47,7 +57,7 @@ function discardPainting(obj)
   if obj.hasTag('painting') then
     local discardPosition = getObjectFromGUID(guids.discardZone).getPosition()
     obj.setRotationSmooth(Vector(0,0,0))
-    obj.setPositionSmooth(discardPosition, false)
+    obj.setPositionSmooth(discardPosition+Vector(0,-1,0), false, true)
   end
 end
 
