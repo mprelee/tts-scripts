@@ -58,6 +58,7 @@ end
 function dealNextRound()
   local numPlayers = #getSeatedPlayers()
   local currentRound = getCurrentRound()
+  broadcastToAll('Begin Round '..currentRound)
   local deckCount = math.abs(getObjectFromGUID(guids.deck).getQuantity())
   local dealsPerPlayer = NUM_DEALS[numPlayers]
   local round1Count = 70 - numPlayers*dealsPerPlayer[1]
@@ -87,7 +88,13 @@ end
 
 -- TODO something more elegant
 local endOfGameFlag = false
+local hasGameStarted = false
 function triggerEndOfRound()
+  if not hasGameStarted then
+    hasGameStarted = true
+    dealNextRound()
+    return
+  end
   if endOfGameFlag then return end
   -- 1. Get round number
   if not isRoundOver() then
@@ -98,6 +105,7 @@ function triggerEndOfRound()
   Wait.time(collectPayoutsAndDiscards, 1)
   if getCurrentRound() < 4 then
     setCurrentRound(getCurrentRound()+1)
+    Wait.time(dealNextRound, 3)
   else
     endOfGameFlag = true
   end

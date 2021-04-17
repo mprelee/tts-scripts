@@ -94,7 +94,7 @@ TODO:  Find a better way to do This
 TODO:  Fix a bug where hitting "UNDO" will remove the context menu item
 ]]
 function onObjectLeaveContainer(container, leave_object)
-  if leave_object.hasTag('Painting') then
+  if leave_object.hasTag('Painting') and container.hasTag('Painting') then
     function announceAuction(player_color)
       --local gavel = getObjectFromGUID(guids.gavel)
       --local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
@@ -109,31 +109,23 @@ function onObjectLeaveContainer(container, leave_object)
       if auction == 'a Double Auction' then
         position = position + 2*getObjectFromGUID(guids.easelZones[player_color]).getTransformForward()
       end
-      leave_object.setPosition(position+Vector(0,40,0))
+      leave_object.setPosition(position+Vector(0,5,0))
       leave_object.setRotationSmooth(rotation)
       leave_object.setPositionSmooth(position)
-      local announce = function()
+      Wait.time(function()
         if isRoundOver() then
           msg = msg..' plays a painting by '..artist..' and triggers end of round.'
-          Wait.time(triggerEndOfRound,2)
         else
           msg = msg..' is holding '..auction..' for a painting by '..artist
         end
         broadcastToAll(msg, stringColorToRGB(player_color))
-      end
-      Wait.time(announce,0.5)
+        if isRoundOver() then
+          broadcastToAll("Click \'Start/Next Round\' button when ready!")
+        end
+      end, .4)
     end
     leave_object.clearContextMenu()
     leave_object.addContextMenuItem("Auction", announceAuction)
     --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
   end
 end
-
-
---function onObjectEnterZone(zone, enter_object)
---  for _, g in pairs(guids.layoutZones) do
---    if zone.guid == g then
---      zone.LayoutZone.layout()
---    end
---  end
---end

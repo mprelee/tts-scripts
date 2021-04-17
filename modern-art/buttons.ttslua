@@ -1,12 +1,12 @@
 function createGameBoardButtons()
   local gameboard = getObjectFromGUID(guids.gameboard)
   gameboard.createButton({
-        click_function = 'dealNextRound',
-        label          = 'Deal',
-        position       = Vector(-2.26, 0, 0.7),
-        width          = 398,
-        height         = 78,
-        font_size      = 98,
+        click_function = 'triggerEndOfRound',
+        label          = 'Start/Next Round',
+        position       = Vector(-2.7, 0, 0.7),
+        width          = 1000,
+        height         = 120,
+        font_size      = 120,
         tooltip        = 'Deal next round if ready.',
       })
   --gameboard.createButton({
