@@ -16,4 +16,5 @@ function onLoad()
   createGameBoardButtons()
   createBuyButtons()
   createBidButtons()
+  updateWalletText()
 end

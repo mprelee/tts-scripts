@@ -129,3 +129,23 @@ function onObjectLeaveContainer(container, leave_object)
     --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
   end
 end
+
+function updateWalletText()
+  for color, text_guid in pairs(guids.walletText) do
+    local zone_guid = guids.hiddenZones[color]
+    local text = getObjectFromGUID(text_guid)
+    text.setValue('$'..sumCashInZone(zone_guid)..'k')
+  end
+end
+
+function onObjectEnterZone(zone, enter_object)
+  if zone.hasTag('moneytoken') then
+    updateWalletText()
+  end
+end
+
+function onObjectLeaveZone(zone, leave_object)
+  if zone.hasTag('moneytoken') then
+    updateWalletText()
+  end
+end
