@@ -15,6 +15,9 @@ function onObjectRandomize(object, playerColor)
   if object.hasTag('Deck') then
     deck.shuffle()
     return
+  --elseif object.hasTag('painting') then
+  --  announceAuction(playerColor, object)
+  --  return
   elseif not object.hasTag('moneytoken') then
     return
   end
@@ -91,42 +94,44 @@ end
 This is a bit of a hack to ensure all cards have 'Auction' context menu
 available.
 TODO:  Find a better way to do This
-TODO:  Fix a bug where hitting "UNDO" will remove the context menu item
+TOrO:  Fix a bug where hitting "UNDO" will remove the context menu item
 ]]
+
+function announceAuction(player_color, painting)
+  assert(painting.hasTag('painting'))
+  local msg = player_color
+  local easel = getObjectFromGUID(guids.easels[player_color])
+  local snapPoint = easel.getSnapPoints()[1]
+  local artist = getArtist(painting)
+  local auction = getAuctionType(painting)
+  local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
+  local rotation = easel.getRotation()  + Vector(90,0,90)
+  if auction == 'a Double Auction' then
+    position = position + 2*getObjectFromGUID(guids.easelZones[player_color]).getTransformForward()
+  end
+  painting.setPosition(position+Vector(0,5,0))
+  painting.setRotationSmooth(rotation)
+  painting.setPositionSmooth(position)
+  Wait.time(function()
+    if isRoundOver() then
+      msg = msg..' plays a painting by '..artist..' and triggers end of round.'
+    else
+      msg = msg..' is holding '..auction..' for a painting by '..artist
+    end
+    broadcastToAll(msg, stringColorToRGB(player_color))
+    if isRoundOver() then
+      broadcastToAll("Click \'Start/Next Round\' button when ready!")
+    end
+  end, .4)
+end
+
 function onObjectLeaveContainer(container, leave_object)
   if leave_object.hasTag('Painting') and container.hasTag('Painting') then
-    function announceAuction(player_color)
-      --local gavel = getObjectFromGUID(guids.gavel)
-      --local layoutPos = getObjectFromGUID(guids.layoutZones[player_color]).getPosition()
-      --gavel.setPositionSmooth(layoutPos)
-      local msg = player_color
-      local easel = getObjectFromGUID(guids.easels[player_color])
-      local snapPoint = easel.getSnapPoints()[1]
-      local artist = getArtist(leave_object)
-      local auction = getAuctionType(leave_object)
-      local position = easel.getPosition() + snapPoint.position + Vector(0,6,0)
-      local rotation = easel.getRotation()  + Vector(90,0,90)
-      if auction == 'a Double Auction' then
-        position = position + 2*getObjectFromGUID(guids.easelZones[player_color]).getTransformForward()
-      end
-      leave_object.setPosition(position+Vector(0,5,0))
-      leave_object.setRotationSmooth(rotation)
-      leave_object.setPositionSmooth(position)
-      Wait.time(function()
-        if isRoundOver() then
-          msg = msg..' plays a painting by '..artist..' and triggers end of round.'
-        else
-          msg = msg..' is holding '..auction..' for a painting by '..artist
-        end
-        broadcastToAll(msg, stringColorToRGB(player_color))
-        if isRoundOver() then
-          broadcastToAll("Click \'Start/Next Round\' button when ready!")
-        end
-      end, .4)
+    function announceAuctionWrapper(player_color)
+      return announceAuction(player_color, leave_object)
     end
     leave_object.clearContextMenu()
-    leave_object.addContextMenuItem("Auction", announceAuction)
-    --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
+    leave_object.addContextMenuItem("Auction", announceAuctionWrapper)
   end
 end
 

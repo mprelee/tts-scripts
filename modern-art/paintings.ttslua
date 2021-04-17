@@ -37,7 +37,7 @@ end
 
 --[[
 Used to determine end-of-round state and to tally the top 3 artists
-Returns a table of artists and the number of their faceup paintings
+Returns a table of artistr and the number of their faceup paintings
 --]]
 function countFaceupPaintings()
   local counts = {
