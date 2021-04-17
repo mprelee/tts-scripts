@@ -123,8 +123,8 @@ function onObjectLeaveContainer(container, leave_object)
       end
       Wait.time(announce,0.5)
     end
+    leave_object.clearContextMenu()
     leave_object.addContextMenuItem("Auction", announceAuction)
-
     --leave_object.addContextMenuItem("Debug", function() for k, v in ipairs(leave_object.getZones()) do print(v.hasTag('HandTrigger')) end end)
   end
 end
