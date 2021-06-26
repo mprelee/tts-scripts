@@ -1,0 +1,189 @@
+--[[ Lua code. See documentation: https://api.tabletopsimulator.com/ --]]
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- CONSTANTS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+local SAVE_STATE_KEY = "playerTimers"
+local GLOBAL_TIMER_NAME = "Total Elapsed Time"
+local DEFAULT_FONT_SIZE=16
+
+local XML_DEFAULTS = {
+  tag="Defaults",
+  attributes={},
+  children = {
+    {
+      tag="Text",
+      attributes={fontSize=DEFAULT_FONT_SIZE,color="White"}
+    },
+    {
+      tag="Panel",
+      attributes={
+        width=240,
+        height=300,
+        color="Black",
+        rectAlignment="MiddleRight"
+      }
+    },
+    {
+      tag="Row",
+      attributes={
+        height=DEFAULT_FONT_SIZE+8,
+    }
+    },
+    {
+      tag="Cell",
+      attributes={
+        padding={4,4,4,4}
+      }
+    },
+    {
+      tag="TableLayout",
+      attributes={
+        autoCalculateHeight=true
+      }
+    }
+  }
+}
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Local variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+local playerTimers = { [GLOBAL_TIMER_NAME] = 0}
+
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Helper functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function formatTime(t)
+  hours = t / 3600
+  minutes = (t % 3600) / 60
+  seconds = (t % 3600) % 60
+  return string.format("%01d", hours) ..
+    ":" .. string.format("%02d", minutes) ..
+    ":" .. string.format("%02d", seconds)
+end
+
+function formatRow(player, time)
+  return {
+    tag="Row",
+    attributes={
+      preferredHeight=DEFAULT_FONT_SIZE+8,
+      preferredWidth=200
+    },
+    children={
+      {
+        tag="Cell",
+        children={
+          {
+            tag="Text",
+            attributes={
+              text=player,
+              alignment="MiddleLeft"
+            }
+          },
+          {
+            tag="Text",
+            attributes={
+              text=formatTime(time),
+              alignment="MiddleRight"}
+          }
+        }
+      }
+    }
+  }
+end
+
+function formatRow(player, time)
+  return {
+    tag="Row",
+    attributes={
+      preferredHeight=DEFAULT_FONT_SIZE+8,
+      preferredWidth=200
+    },
+    children={
+      {
+        tag="Cell",
+        children={
+          {
+            tag="Text",
+            attributes={
+              text=player,
+              alignment="MiddleLeft"
+            }
+          },
+          {
+            tag="Text",
+            attributes={
+              text=formatTime(time),
+              alignment="MiddleRight"}
+          }
+        }
+      }
+    }
+  }
+end
+
+function buildXml()
+  local timeXml = {}
+  -- Put total time at the top
+  table.insert(timeXml, formatRow(GLOBAL_TIMER_NAME, playerTimers[GLOBAL_TIMER_NAME]))
+  for player, time in pairs(playerTimers) do
+    if player ~= GLOBAL_TIMER_NAME then
+      table.insert(timeXml, formatRow(player, time))
+    end
+  end
+  local panelXml = {
+    tag="Panel",
+    children={
+      tag="TableLayout",children=timeXml
+    }
+  }
+
+  --local panelXml = {
+  --  tag="Panel",
+  --  children={
+  --    tag="VerticalLayout",children=timeXml
+  --  }
+  --}
+
+  --local panelXml = {
+  --  tag="VerticalLayout",
+  --  children=timeXml
+  --}
+  local xml = {XML_DEFAULTS, panelXml}
+  UI.setXmlTable(xml)
+end
+
+function updateXml()
+  local currentPlayerColor = Turns.turn_color
+  for _, player in ipairs(Player.getPlayers()) do
+    if currentPlayerColor == player.color then
+      playerTimers[player.steam_name] = playerTimers[player.steam_name] + 1
+    elseif playerTimers[player.steam_name] == nil then
+      playerTimers[player.steam_name] = 0
+    end
+  end
+  -- Always increment global timer
+  playerTimers[GLOBAL_TIMER_NAME] = playerTimers[GLOBAL_TIMER_NAME] + 1
+
+  buildXml()
+end
+
+--[[ The onLoad event is called after the game save finishes loading. --]]
+function onLoad(saveData)
+  --if saveData ~= "" then
+  --  local data = JSON.decode(saveData)
+  --  if data[SAVE_STATE_KEY] then
+  --    for key, value in pairs(playerTimers) do
+  --      if not data[SAVE_STATE_KEY][key] then
+  --        data[SAVE_STATE_KEY][key] = value
+  --      end
+  --    end
+  --    playerTimers = data[SAVE_STATE_KEY]
+  --  end
+  --end
+  Wait.time(updateXml, 1, -1)
+end
+
+function onSave()
+  --return JSON.encode({playerTimers=playerTimers})
+end
